@@ -100,11 +100,18 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
 }
@@ -113,13 +120,26 @@
   .gradient-hero {
     background: var(--gradient-hero);
   }
+
   .gradient-accent {
     background: var(--gradient-accent);
   }
+
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
+
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
+  }
+
+  @keyframes progress {
+    0% {
+      width: 0%;
+    }
+
+    100% {
+      width: 100%;
+    }
   }
 }

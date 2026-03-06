@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  LayoutDashboard, DollarSign, Users, Package, Bell, BarChart, LogOut, FileText, ShoppingCart, User
+  LayoutDashboard, DollarSign, Users, Package, Bell, BarChart, LogOut, FileText, ShoppingCart, User, Zap
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,7 +20,6 @@ const menuItems = [
   { title: "Gastos", url: "/dashboard/gastos", icon: DollarSign },
   { title: "Nóminas", url: "/dashboard/nominas", icon: Users },
   { title: "Inventario", url: "/dashboard/inventario", icon: Package },
-  { title: "Fiscal / SAT", url: "/dashboard/fiscal", icon: FileText },
   { title: "Alertas", url: "/dashboard/alertas", icon: Bell },
   { title: "Analítica", url: "/dashboard/analitica", icon: BarChart },
 ];
@@ -36,7 +35,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{tenant.logo}</span>
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+            <Zap className="h-5 w-5" />
+          </div>
           {!collapsed && <span className="font-display font-bold text-sm truncate">{tenant.name}</span>}
         </div>
       </SidebarHeader>
@@ -76,7 +77,10 @@ export function AppSidebar() {
           variant="ghost"
           size="sm"
           className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground"
-          onClick={() => navigate("/")}
+          onClick={() => {
+            localStorage.removeItem("is_auth");
+            navigate("/");
+          }}
         >
           <LogOut className="mr-2 h-4 w-4" />
           {!collapsed && "Cerrar Sesión"}

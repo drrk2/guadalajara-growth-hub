@@ -60,7 +60,7 @@ export function HeroSection() {
             <Button
               size="lg"
               variant="outline"
-              className="gap-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="gap-2 bg-[#25D366] text-white hover:bg-[#20ba59] border-none"
               onClick={() => window.open(`https://wa.me/${tenant.whatsapp}`, "_blank")}
             >
               <MessageCircle className="h-4 w-4" /> WhatsApp

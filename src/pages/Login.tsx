@@ -1,56 +1,70 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { tenant } from "@/data/mock-data";
-import { ArrowLeft, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Zap } from "lucide-react";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [email, setEmail] = useState("demo@tacoselpatron.mx");
-  const [password, setPassword] = useState("demo123");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo: just redirect to dashboard
-    toast({ title: "¡Bienvenido!", description: "Accediendo al panel de administración..." });
-    setTimeout(() => navigate("/dashboard"), 500);
+    // Simular login exitoso
+    localStorage.setItem("is_auth", "true");
+    toast({
+      title: "Bienvenido",
+      description: "Sesión iniciada correctamente.",
+    });
+    navigate("/dashboard");
   };
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
-      <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-secondary/10 blur-3xl" />
-      <Card className="w-full max-w-md shadow-elevated relative z-10">
-        <CardHeader className="text-center">
-          <button onClick={() => navigate("/")} className="absolute top-4 left-4 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <span className="text-4xl mb-2 block">{tenant.logo}</span>
-          <CardTitle className="font-display text-2xl">{tenant.name}</CardTitle>
-          <CardDescription>Accede a tu panel de administración</CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm shadow-elevated border-primary/10">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/30">
+              <Zap className="h-7 w-7" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-display font-bold">{tenant.name}</CardTitle>
+          <p className="text-sm text-muted-foreground text-center">Inicia sesión en tu plataforma</p>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin}>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <label className="text-sm font-medium">Correo Electrónico</label>
+              <Input
+                type="email"
+                placeholder="usuario@ejemplo.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <label className="text-sm font-medium">Contraseña</label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Button type="submit" className="w-full gap-2">
-              <LogIn className="h-4 w-4" /> Iniciar Sesión
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full">
+              Entrar al Sistema
             </Button>
-          </form>
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            Demo: usa cualquier credencial para acceder
-          </p>
-        </CardContent>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
