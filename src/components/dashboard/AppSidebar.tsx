@@ -1,5 +1,6 @@
+import React from "react";
 import {
-  LayoutDashboard, DollarSign, Users, Package, Bell, BarChart3, LogOut, ChevronLeft
+  LayoutDashboard, DollarSign, Users, Package, Bell, BarChart, LogOut, FileText, ShoppingCart, User
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,11 +15,14 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Ventas / POS", url: "/dashboard/pos", icon: ShoppingCart },
+  { title: "CRM / Clientes", url: "/dashboard/crm", icon: User },
   { title: "Gastos", url: "/dashboard/gastos", icon: DollarSign },
   { title: "Nóminas", url: "/dashboard/nominas", icon: Users },
   { title: "Inventario", url: "/dashboard/inventario", icon: Package },
+  { title: "Fiscal / SAT", url: "/dashboard/fiscal", icon: FileText },
   { title: "Alertas", url: "/dashboard/alertas", icon: Bell },
-  { title: "Analítica", url: "/dashboard/analitica", icon: BarChart3 },
+  { title: "Analítica", url: "/dashboard/analitica", icon: BarChart },
 ];
 
 export function AppSidebar() {
@@ -55,7 +59,7 @@ export function AppSidebar() {
                       {!collapsed && <span>{item.title}</span>}
                       {!collapsed && item.title === "Alertas" && unreadAlerts > 0 && (
                         <Badge variant="destructive" className="ml-auto text-xs h-5 px-1.5">
-                          {unreadAlerts}
+                          {unreadAlerts.toString()}
                         </Badge>
                       )}
                     </NavLink>

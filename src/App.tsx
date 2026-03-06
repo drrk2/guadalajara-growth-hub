@@ -13,6 +13,9 @@ import NominasPage from "./pages/dashboard/NominasPage";
 import InventarioPage from "./pages/dashboard/InventarioPage";
 import AlertasPage from "./pages/dashboard/AlertasPage";
 import AnaliticaPage from "./pages/dashboard/AnaliticaPage";
+import FiscalPage from "./pages/dashboard/FiscalPage";
+import CRMPage from "./pages/dashboard/CRMPage";
+import POSPage from "./pages/dashboard/POSPage";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +35,9 @@ const App = () => (
             <Route path="inventario" element={<InventarioPage />} />
             <Route path="alertas" element={<AlertasPage />} />
             <Route path="analitica" element={<AnaliticaPage />} />
+            <Route path="fiscal" element={<FiscalPage />} />
+            <Route path="crm" element={<CRMPage />} />
+            <Route path="pos" element={<POSPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

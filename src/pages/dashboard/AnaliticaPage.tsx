@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { revenueVsExpenses, kpis, expensesByCategory } from "@/data/mock-data";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
@@ -6,25 +7,47 @@ import { Sparkles, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const formatMoney = (n: number) => `$${n.toLocaleString("es-MX")}`;
-const margin = kpis.ingresosMes - kpis.gastosMes;
-const marginPct = ((margin / kpis.ingresosMes) * 100).toFixed(1);
 
 const AnaliticaPage = () => {
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const margin = kpis.ingresosMes - kpis.gastosMes;
+  const marginPct = ((margin / kpis.ingresosMes) * 100).toFixed(1);
+
+  const generateAIReport = () => {
+    setIsGenerating(true);
+    toast({ title: "🤖 Iniciando IA", description: "Analizando datos de ingresos y gastos..." });
+
+    setTimeout(() => {
+      toast({ title: "📈 Descubrimiento", description: "Se detectó una oportunidad de ahorro del 15% en insumos." });
+    }, 2000);
+
+    setTimeout(() => {
+      setIsGenerating(false);
+      toast({
+        title: "✅ Reporte Generado",
+        description: "El análisis estratégico está listo para descargar.",
+        variant: "default",
+      });
+    }, 4500);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold">Analítica</h1>
-          <p className="text-sm text-muted-foreground">Métricas y tendencias de tu negocio</p>
+          <h1 className="text-2xl font-display font-bold">Analítica Inteligente</h1>
+          <p className="text-sm text-muted-foreground">Métricas, tendencias y predicciones IA para tu negocio</p>
         </div>
         <Button
-          variant="outline"
-          className="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground"
-          onClick={() => toast({ title: "🤖 IA en desarrollo", description: "Próximamente: reportes generados con inteligencia artificial." })}
+          variant="secondary"
+          className="gap-2 shadow-card"
+          disabled={isGenerating}
+          onClick={generateAIReport}
         >
-          <Sparkles className="h-4 w-4" /> Generar Reporte IA
+          <Sparkles className={`h-4 w-4 ${isGenerating ? 'animate-pulse' : ''}`} />
+          {isGenerating ? "Generando..." : "Generar Reporte IA"}
         </Button>
       </div>
 
