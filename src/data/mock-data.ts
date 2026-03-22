@@ -1,19 +1,19 @@
-// Demo data for "Electromecánica Pro - Refacciones Industriales"
+// Demo data for "EISEN - Industrial Electromechanical"
 
 export const tenant = {
-  id: "electromec-demo-001",
-  name: "Electromecánica Pro",
-  slug: "electromecanica-pro",
+  id: "eisen-demo-001",
+  name: "EISEN",
+  slug: "eisen-industrial",
   logo: "⚙️",
   tagline: "Refacciones y Soluciones Electromecánicas Industriales",
   phone: "+52 33 9876 5432",
   whatsapp: "5213398765432",
-  email: "ventas@electromecanicapro.mx",
+  email: "ventas@eisenmx.com",
   address: "Zona Industrial, Guadalajara, Jalisco",
-  website: "electromecanicapro.mx",
+  website: "eisenmx.com",
   social: {
-    facebook: "electromecanicapro",
-    instagram: "electromecanicapro",
+    facebook: "eisenindustrial",
+    instagram: "eisenindustrial",
   },
 };
 

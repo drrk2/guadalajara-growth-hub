@@ -7,7 +7,10 @@ import { tenant } from "@/data/mock-data";
 import { useToast } from "@/hooks/use-toast";
 import { Zap } from "lucide-react";
 
+import { useSystem } from "@/context/SystemContext";
+
 const Login = () => {
+  const { login } = useSystem();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -15,10 +18,14 @@ const Login = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simular login exitoso
-    localStorage.setItem("is_auth", "true");
+    
+    // Simular lógica de roles basada en el correo
+    const role = email.toLowerCase().includes("admin") ? "admin" : "employee";
+    
+    login(email, role);
+    
     toast({
-      title: "Bienvenido",
+      title: `Bienvenido (${role})`,
       description: "Sesión iniciada correctamente.",
     });
     navigate("/dashboard");

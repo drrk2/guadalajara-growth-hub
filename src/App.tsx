@@ -17,18 +17,24 @@ import CRMPage from "./pages/dashboard/CRMPage";
 import POSPage from "./pages/dashboard/POSPage";
 import ChatWidget from "./components/ChatWidget";
 
-import { SystemProvider } from "./context/SystemContext";
+import { SystemProvider, useSystem } from "./context/SystemContext";
 import { Navigate, useLocation } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
-// Security Guard: Check if user is "logged in" (mock)
-const RequireAuth = ({ children }: { children: React.ReactNode }) => {
-  const isAuth = localStorage.getItem("is_auth") === "true";
+// Security Guard: Check if user is "logged in" and has the right role
+const RequireAuth = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
+  const { user } = useSystem();
   const location = useLocation();
-  if (!isAuth) {
+
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -52,12 +58,12 @@ const App = () => (
               }
             >
               <Route index element={<DashboardHome />} />
-              <Route path="gastos" element={<GastosPage />} />
-              <Route path="nominas" element={<NominasPage />} />
+              <Route path="gastos" element={<RequireAuth allowedRoles={["admin"]}><GastosPage /></RequireAuth>} />
+              <Route path="nominas" element={<RequireAuth allowedRoles={["admin"]}><NominasPage /></RequireAuth>} />
               <Route path="inventario" element={<InventarioPage />} />
               <Route path="alertas" element={<AlertasPage />} />
-              <Route path="analitica" element={<AnaliticaPage />} />
-              <Route path="crm" element={<CRMPage />} />
+              <Route path="analitica" element={<RequireAuth allowedRoles={["admin"]}><AnaliticaPage /></RequireAuth>} />
+              <Route path="crm" element={<RequireAuth allowedRoles={["admin"]}><CRMPage /></RequireAuth>} />
               <Route path="pos" element={<POSPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />

@@ -14,7 +14,7 @@ export function HeroSection() {
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/hero-bg.png')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
       </div>
 
       <div className="container mx-auto px-4 py-20 relative z-10">
@@ -33,7 +33,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl font-display font-bold text-slate-900 leading-tight mb-6 drop-shadow-sm"
+            className="text-5xl md:text-7xl font-display font-bold text-white leading-tight mb-4 tracking-tight"
           >
             {tenant.name}
           </motion.h1>
@@ -42,9 +42,9 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-lg"
+            className="text-lg md:text-xl text-white/70 mb-8 max-w-lg font-medium border-l-4 border-primary pl-4"
           >
-            {tenant.tagline}
+            Refacciones y Soluciones Electromecánicas Industriales
           </motion.p>
 
           <motion.div
@@ -55,8 +55,8 @@ export function HeroSection() {
           >
             <Button
               size="lg"
-              variant="secondary"
-              className="gap-2 font-semibold text-base"
+              variant="default"
+              className="gap-2 font-semibold text-base shadow-xl shadow-primary/20 hover:scale-105 transition-all"
               onClick={() => navigate("/login")}
             >
               Acceder al Sistema <ArrowRight className="h-4 w-4" />

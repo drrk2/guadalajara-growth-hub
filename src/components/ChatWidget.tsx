@@ -11,7 +11,11 @@ interface Message {
     content: string;
 }
 
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+
+if (!GROQ_API_KEY) {
+  console.warn("VITE_GROQ_API_KEY is missing from environment variables.");
+}
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 const ChatWidget = () => {
