@@ -36,7 +36,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-            <Zap className="h-5 w-5" />
+            <span className="text-xl">{tenant.logo}</span>
           </div>
           {!collapsed && <span className="font-display font-bold text-sm truncate">{tenant.name}</span>}
         </div>

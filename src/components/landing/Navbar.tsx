@@ -19,10 +19,11 @@ export function Navbar() {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-6">
           <a href="#servicios" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Servicios</a>
+          <a href="#catalogo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Catálogo</a>
           <a href="#nosotros" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Nosotros</a>
           <a href="#contacto" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contacto</a>
           <Button onClick={() => navigate("/login")} size="sm">
-            Iniciar Sesión
+            Acceder
           </Button>
         </div>
 
@@ -35,10 +36,11 @@ export function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-card border-b px-4 pb-4 space-y-3">
           <a href="#servicios" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Servicios</a>
+          <a href="#catalogo" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Catálogo</a>
           <a href="#nosotros" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Nosotros</a>
           <a href="#contacto" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Contacto</a>
           <Button onClick={() => { setMobileOpen(false); navigate("/login"); }} size="sm" className="w-full">
-            Iniciar Sesión
+            Acceder
           </Button>
         </div>
       )}

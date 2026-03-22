@@ -85,8 +85,8 @@ const POSPage = () => {
                     {inventory.map((p) => (
                         <Card key={p.id} className="cursor-pointer hover:border-sidebar-primary transition-all active:scale-95 bg-card/40 backdrop-blur-sm" onClick={() => addToCart(p)}>
                             <CardContent className="p-4 flex flex-col items-center text-center">
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                                    {p.category.toLowerCase().includes('bebida') ? <span className="text-xl">🥤</span> : <Package className="h-5 w-5 text-primary" />}
+                                <div className="h-12 w-full rounded-md overflow-hidden bg-muted mb-2 border shrink-0">
+                                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                                 </div>
                                 <p className="text-xs font-semibold line-clamp-2 min-h-[2.5rem]">{p.name}</p>
                                 <p className="text-sidebar-primary font-bold mt-1">{formatMoney(p.price)}</p>

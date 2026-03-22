@@ -6,7 +6,7 @@ export function ServicesSection() {
     <section id="servicios" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-4">Nuestros Servicios</h2>
-        <p className="text-muted-foreground text-center mb-12 max-w-md mx-auto">Lo mejor de la cocina mexicana, directo a tu mesa</p>
+        <p className="text-muted-foreground text-center mb-12 max-w-md mx-auto">Soluciones integrales para la industria, garantizando calidad y ahorro en cada mantenimiento.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((s, i) => (
