@@ -36,13 +36,26 @@ export function CatalogSection() {
 
   useEffect(() => {
     async function fetchProducts() {
+      console.log("Iniciando carga de catálogo desde Supabase...");
+      
+      const fetchPromise = supabase
+        .from('products')
+        .select('*')
+        .order('name');
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout de conexión (10s)")), 10000)
+      );
+
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('name');
+        const { data, error }: any = await Promise.race([fetchPromise, timeoutPromise]);
         
-        if (error) throw error;
+        if (error) {
+          console.error("Error de Supabase:", error);
+          throw error;
+        }
+        
+        console.log("Productos recibidos:", data?.length || 0);
         if (data) setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -53,27 +66,31 @@ export function CatalogSection() {
     fetchProducts();
   }, []);
 
-  const formatMoney = (amount: number) => {
+  const formatMoney = (amount: any) => {
+    const value = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN',
-    }).format(amount);
+    }).format(value);
   };
 
-  const parseSpecs = (specsStr: string) => {
+  const parseSpecs = (specsStr: any) => {
+    if (!specsStr) return [];
     try {
-      const parsed = JSON.parse(specsStr);
+      const parsed = typeof specsStr === 'string' ? JSON.parse(specsStr) : specsStr;
       if (Array.isArray(parsed)) return parsed;
-      if (typeof parsed === 'object') return Object.entries(parsed).map(([k, v]) => `${k}: ${v}`);
-      return [specsStr];
+      if (parsed && typeof parsed === 'object') {
+        return Object.entries(parsed).map(([k, v]) => `${k}: ${v}`);
+      }
+      return [String(specsStr)];
     } catch {
-      return specsStr ? specsStr.split(',').map(s => s.trim()) : [];
+      return String(specsStr).split(',').map(s => s.trim());
     }
   };
 
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-4 bg-[#050505] text-white">
+      <div className="py-24 flex flex-col items-center justify-center gap-4 bg-[#050505] text-white min-h-[400px]">
         <RefreshCw className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm font-bold uppercase tracking-widest text-white/50">Cargando Catálogo EISEN...</p>
       </div>
