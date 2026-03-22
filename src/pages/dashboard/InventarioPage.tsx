@@ -25,16 +25,21 @@ const InventarioPage = () => {
 
   const fetchInventory = async () => {
     setLoading(true);
+    const fetchPromise = supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Error de conexión con Supabase (10s).")), 10000)
+    );
+
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
+      const { data, error }: any = await Promise.race([fetchPromise, timeoutPromise]);
       if (error) throw error;
       setProducts(data || []);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: "destructive", title: "Error de Sincronización", description: error.message });
     } finally {
       setLoading(false);
     }

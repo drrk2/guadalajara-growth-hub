@@ -48,13 +48,27 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
     const [payroll, setPayroll] = useState(initialPayroll);
     const [alerts, setAlerts] = useState(initialAlerts);
 
+    const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> => {
+        return Promise.race([
+            promise,
+            new Promise<T>((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout de conexión (10s). Revisa tus llaves de Supabase.")), timeoutMs)
+            ),
+        ]);
+    };
+
     useEffect(() => {
         // Initialization
         const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                await fetchProfile(session.user.id, session.user.email!);
-            } else {
+            try {
+                const { data: { session } } = await withTimeout(supabase.auth.getSession());
+                if (session) {
+                    await fetchProfile(session.user.id, session.user.email!);
+                } else {
+                    setLoadingAuth(false);
+                }
+            } catch (err) {
+                console.error("Auth init error:", err);
                 setLoadingAuth(false);
             }
         };
@@ -76,11 +90,15 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchProfile = async (userId: string, email: string) => {
         try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
+            const { data, error }: any = await withTimeout(
+                Promise.resolve(
+                    supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', userId)
+                        .single()
+                )
+            );
             
             if (error && error.code !== 'PGRST116') {
                console.error("Error fetching profile:", error);
@@ -101,32 +119,47 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const login = async (email: string, password: string): Promise<AuthResponse> => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error };
+        try {
+            const { error }: any = await withTimeout(Promise.resolve(supabase.auth.signInWithPassword({ email, password })));
+            if (error) console.error("Login Supabase Error:", error);
+            return { error: error || null };
+        } catch (err: any) {
+            console.error("Login Timeout/Network Error:", err);
+            return { error: err };
+        }
     };
 
     const signUp = async (email: string, password: string, name: string): Promise<AuthResponse> => {
-        const { data, error } = await supabase.auth.signUp({ 
-            email, 
-            password,
-            options: {
-                data: { full_name: name, role: 'client' }
-            }
-        });
+        try {
+            const { data, error }: any = await withTimeout(Promise.resolve(supabase.auth.signUp({ 
+                email, 
+                password,
+                options: {
+                    data: { full_name: name, role: 'client' }
+                }
+            })));
 
-        // If successful, create profile entry
-        if (!error && data.user) {
-            await supabase.from('profiles').insert([
-                { id: data.user.id, full_name: name, role: 'client' }
-            ]);
+            // If successful, create profile entry
+            if (!error && data?.user) {
+                await withTimeout(Promise.resolve(supabase.from('profiles').insert([
+                    { id: data.user.id, full_name: name, role: 'client' }
+                ])));
+            }
+            
+            return { error: error || null };
+        } catch (err: any) {
+            console.error("SignUp Timeout/Network Error:", err);
+            return { error: err };
         }
-        
-        return { error };
     };
 
     const logout = async (): Promise<AuthResponse> => {
-        const { error } = await supabase.auth.signOut();
-        return { error };
+        try {
+            const { error }: any = await withTimeout(Promise.resolve(supabase.auth.signOut()));
+            return { error: error || null };
+        } catch (err: any) {
+             return { error: err };
+        }
     };
 
     const processSale = (cart: any[]) => {
