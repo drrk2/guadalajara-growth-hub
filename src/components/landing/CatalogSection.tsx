@@ -171,18 +171,13 @@ export function CatalogSection() {
                   </Card>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl bg-[#0a0a0a] border-white/10 text-white overflow-hidden p-0 rounded-none">
-                  <div className="grid md:grid-cols-2 gap-0">
-                    <div className="aspect-square md:h-full relative overflow-hidden bg-black">
-                      {product.image && product.image.startsWith('http') ? (
+                  <div className={product.image && product.image.startsWith('http') ? "grid md:grid-cols-2 gap-0" : "flex flex-col"}>
+                    {product.image && product.image.startsWith('http') && (
+                      <div className="aspect-square md:h-full relative overflow-hidden bg-black">
                         <img src={product.image} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] p-6 text-center">
-                          <Box className="h-24 w-24 text-white/5 mb-6" />
-                          <span className="text-xs font-bold text-white/20 uppercase tracking-[0.3em]">Imagen No Disponible</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />
-                    </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />
+                      </div>
+                    )}
                     <div className="p-10 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center gap-3 mb-6">
