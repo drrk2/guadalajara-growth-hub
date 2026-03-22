@@ -10,13 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Search, AlertTriangle, Package, Plus, RefreshCw, Edit2, Trash2, Image as ImageIcon, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useSystem } from "@/context/SystemContext";
 
 const formatMoney = (n: number) => `$${n.toLocaleString("es-MX")}`;
 
 const InventarioPage = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { inventory: products, loadingInventory: loading, refreshInventory: fetchInventory } = useSystem();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -25,30 +25,9 @@ const InventarioPage = () => {
    const [uploading, setUploading] = useState(false);
    const [tempImageUrl, setTempImageUrl] = useState("");
 
-  const fetchInventory = async () => {
-    setLoading(true);
-    const fetchPromise = supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Error de conexión con Supabase (10s).")), 10000)
-    );
-
-    try {
-      const { data, error }: any = await Promise.race([fetchPromise, timeoutPromise]);
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error de Sincronización", description: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchInventory();
+    // Inventory is already fetched by SystemProvider, but we can refresh it here if needed
+    // or just rely on the initial fetch.
   }, []);
 
   const categories = Array.from(new Set(products.map(p => p.category)));

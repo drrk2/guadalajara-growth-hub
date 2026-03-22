@@ -24,9 +24,10 @@ interface SystemContextType {
     login: (email: string, password: string) => Promise<AuthResponse>;
     logout: () => Promise<AuthResponse>;
     signUp: (email: string, password: string, name: string) => Promise<AuthResponse>;
-    // Keep mock data for pages not yet migrated
+    // Real products state from Supabase
     inventory: any[];
-    setInventory: React.Dispatch<React.SetStateAction<any[]>>;
+    loadingInventory: boolean;
+    refreshInventory: () => Promise<void>;
     employees: any[];
     setEmployees: React.Dispatch<React.SetStateAction<any[]>>;
     payroll: any[];
@@ -41,9 +42,8 @@ const SystemContext = createContext<SystemContextType | undefined>(undefined);
 export const SystemProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
-    
-    // Mock States for unmigrated components
-    const [inventory, setInventory] = useState(initialProducts);
+    const [inventory, setInventory] = useState<any[]>([]);
+    const [loadingInventory, setLoadingInventory] = useState(true);
     const [employees, setEmployees] = useState(initialEmployees);
     const [payroll, setPayroll] = useState(initialPayroll);
     const [alerts, setAlerts] = useState(initialAlerts);
@@ -73,7 +73,12 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        getSession();
+        const init = async () => {
+            await getSession();
+            await refreshInventory();
+        };
+
+        init();
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -165,6 +170,21 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const refreshInventory = async () => {
+        setLoadingInventory(true);
+        try {
+            const { data, error } = await withTimeout(
+                Promise.resolve(supabase.from('products').select('*').order('created_at', { ascending: false }))
+            );
+            if (error) throw error;
+            setInventory(data || []);
+        } catch (error) {
+            console.error("Error refreshing inventory:", error);
+        } finally {
+            setLoadingInventory(false);
+        }
+    };
+
     const logout = async (): Promise<AuthResponse> => {
         try {
             const { error }: any = await withTimeout(Promise.resolve(supabase.auth.signOut()));
@@ -174,23 +194,37 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const processSale = (cart: any[]) => {
-        setInventory(prev => {
-            const newInventory = JSON.parse(JSON.stringify(prev));
-            cart.forEach(item => {
-                const product = newInventory.find((p: any) => p.id === item.id);
-                if (product) {
-                    product.stock = Math.max(0, product.stock - item.quantity);
-                }
+    const processSale = async (cart: any[]) => {
+        try {
+            const updatePromises = cart.map(item => {
+                // Determine current stock from our local inventory first
+                const currentProduct = inventory.find(p => p.id === item.id);
+                const newStock = Math.max(0, (currentProduct?.stock || 0) - item.quantity);
+                
+                return supabase
+                    .from('products')
+                    .update({ stock: newStock })
+                    .eq('id', item.id);
             });
-            return newInventory;
-        });
+
+            const results = await Promise.all(updatePromises);
+            const errors = results.filter(r => r.error);
+            
+            if (errors.length > 0) {
+                console.error("Errors during stock update:", errors);
+            }
+            
+            // Re-fetch to sync
+            await refreshInventory();
+        } catch (err) {
+            console.error("CRITICAL: Failed to process sale in Supabase:", err);
+        }
     };
 
     return (
         <SystemContext.Provider value={{
             user, loadingAuth, login, logout, signUp,
-            inventory, setInventory,
+            inventory, loadingInventory, refreshInventory,
             employees, setEmployees,
             payroll, setPayroll,
             alerts, setAlerts,

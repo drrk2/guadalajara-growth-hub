@@ -51,14 +51,25 @@ const POSPage = () => {
         }
     };
 
-    const completeCheckout = (method: string) => {
-        processSale(cart);
-        toast({
-            title: "¡Venta Completada!",
-            description: `Monto: ${formatMoney(total)} con ${method}. Inventario actualizado.`,
-            className: "bg-success text-white border-0"
-        });
-        setCart([]);
+    const completeCheckout = async (method: string) => {
+        setIsProcessing(true);
+        try {
+            await processSale(cart);
+            toast({
+                title: "¡Venta Completada!",
+                description: `Monto: ${formatMoney(total)} con ${method}. Inventario actualizado.`,
+                className: "bg-success text-white border-0"
+            });
+            setCart([]);
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Error en la Venta",
+                description: "No se pudo actualizar el inventario. Inténtalo de nuevo."
+            });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
