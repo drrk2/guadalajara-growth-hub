@@ -187,15 +187,50 @@ export function CatalogSection() {
                     </CardFooter>
                   </Card>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl bg-[#0a0a0a] border-white/10 text-white overflow-hidden p-0 rounded-none">
-                  <div className={product.image && (product.image.startsWith('http') || product.image.startsWith('data:image/')) ? "grid md:grid-cols-2 gap-0" : "flex flex-col"}>
-                    {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image/')) && (
-                      <div className="aspect-square md:h-full relative overflow-hidden bg-black">
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />
+                <DialogContent className="max-w-4xl bg-[#080808] border-white/10 p-0 overflow-hidden shadow-2xl rounded-none">
+                  <div className="grid md:grid-cols-2 gap-0 min-h-[450px]">
+                    {/* Image Column / Industrial Placeholder */}
+                    <div className="relative bg-zinc-950 flex items-center justify-center overflow-hidden border-r border-white/5">
+                      {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image/')) ? (
+                        <img 
+                          src={product.image} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity duration-700 h-[450px]"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center relative p-12">
+                           {/* SKU Watermark */}
+                           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none">
+                              <span className="text-[120px] font-mono font-black rotate-[-15deg] tracking-tighter whitespace-nowrap">
+                                 {product.sku || "EISEN-SPEC"}
+                              </span>
+                           </div>
+                           
+                           {/* Technical Scanlines Effect */}
+                           <div className="absolute inset-0 pointer-events-none opacity-20" 
+                                style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} 
+                           />
+
+                           <div className="relative z-10 flex flex-col items-center text-center">
+                              <div className="h-24 w-24 mb-6 relative">
+                                 <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+                                 <Box className="h-24 w-24 text-white/10 relative z-10" strokeWidth={1} />
+                              </div>
+                              <p className="text-[10px] font-bold text-primary tracking-[0.5em] uppercase mb-2">Technical Documentation</p>
+                              <h4 className="text-white/20 font-black text-xl uppercase tracking-tighter italic">Imagen en Proceso</h4>
+                           </div>
+                        </div>
+                      )}
+                      
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-primary hover:bg-primary text-white rounded-none px-3 py-1 text-[10px] font-bold tracking-widest border-none skew-x-[-12deg]">
+                          <span className="skew-x-[12deg]">{product.category || "GENERAL"}</span>
+                        </Badge>
                       </div>
-                    )}
-                    <div className="p-10 flex flex-col justify-between">
+                    </div>
+
+                    {/* Details Column */}
+                    <div className="p-10 flex flex-col justify-between bg-gradient-to-br from-black to-zinc-900">
                       <div>
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-px w-8 bg-primary" />
