@@ -1,4 +1,4 @@
-// Demo data for "EISEN - Industrial Electromechanical"
+import { Settings2, Zap, Wrench, Box } from "lucide-react";
 
 export const tenant = {
   id: "eisen-demo-001",
@@ -18,10 +18,10 @@ export const tenant = {
 };
 
 export const services = [
-  { icon: "⚙️", title: "Refacciones", description: "Venta de componentes mecánicos y eléctricos para la industria" },
-  { icon: "⚡", title: "Asesoría Técnica", description: "Soporte especializado en sistemas electromecánicos" },
-  { icon: "🛠️", title: "Mantenimiento", description: "Reparación y mantenimiento de motores y equipos" },
-  { icon: "📦", title: "Envíos Locales", description: "Entrega inmediata en la Zona Metropolitana de Guadalajara" },
+  { icon: Settings2, title: "Refacciones", description: "Venta de componentes mecánicos y eléctricos para la industria con entrega inmediata y garantía de calidad." },
+  { icon: Zap, title: "Asesoría Técnica", description: "Soporte especializado en sistemas electromecánicos, optimización de procesos y diagnóstico de fallas." },
+  { icon: Wrench, title: "Mantenimiento", description: "Servicios preventivos y correctivos para motores industriales, tableros eléctricos y maquinaria crítica." },
+  { icon: Box, title: "Envíos Locales", description: "Logística especializada con entrega inmediata en la Zona Metropolitana de Guadalajara y servicios de envío nacional." },
 ];
 
 export const kpis = {
@@ -124,58 +124,58 @@ export const products = [
   { 
     id: "6", 
     name: "Capacitor de Arranque 100uF", 
-    sku: "CAP-100", 
-    stock: 4, 
+    sku: "CAP-ST-100", 
+    stock: 22, 
     minStock: 10, 
     price: 180, 
     category: "Eléctrico",
-    image: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&q=80&w=400",
-    specs: "Capacitancia: 100uF, Voltaje: 330VAC, Frecuencia: 50/60Hz, Tipo: Seco"
+    image: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&q=80&w=800",
+    specs: "Capacitancia: 100uF, Voltaje: 250V, Tipo: Electrolítico, Frecuencia: 50/60Hz"
   },
   { 
     id: "7", 
     name: "Multímetro Industrial Fluke", 
-    sku: "TOOL-001", 
-    stock: 5, 
+    sku: "TL-FLK-179", 
+    stock: 2, 
     minStock: 5, 
-    price: 5600, 
+    price: 5500, 
     category: "Herramientas",
-    image: "https://images.unsplash.com/photo-1581092162384-8987c1d64718?auto=format&fit=crop&q=80&w=400",
-    specs: "Modelo: 87V, Precisión: 0.05%, Rango: V/A/Ohm/Cap/Hz, Categoría: IV 600V"
+    image: "https://images.unsplash.com/photo-1620288627223-53302f4e8c74?auto=format&fit=crop&q=80&w=800",
+    specs: "Precisión: 0.09%, True RMS, Pantalla: Digital, Rating: CAT IV 600V"
   },
   { 
     id: "8", 
     name: "Pinza Amperimétrica", 
-    sku: "TOOL-002", 
-    stock: 2, 
+    sku: "TL-CMP-323", 
+    stock: 4, 
     minStock: 5, 
     price: 1850, 
     category: "Herramientas",
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400",
-    specs: "Rango A: 400A AC/DC, Voltaje: 600V, Apertura: 30mm, True RMS"
+    image: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=800",
+    specs: "Rango: 400A AC, Voltaje: 600V, Resistencia, Continuidad"
   },
   { 
     id: "9", 
     name: "Grasa de Litio 400g", 
-    sku: "LUB-001", 
-    stock: 24, 
+    sku: "CHM-LTH-400", 
+    stock: 25, 
     minStock: 10, 
     price: 210, 
     category: "Mecánica",
-    image: "https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&q=80&w=400",
-    specs: "Base: Jabón Litio, Grado NLGI: 2, Temp: -20 a 120°C, Aplicación: Rodamientos"
+    image: "https://images.unsplash.com/photo-1492138773019-81f7cfbb9c7f?auto=format&fit=crop&q=80&w=800",
+    specs: "Base: Litio, Color: Ámbar, Temperatura: -20C a 120C, Envase: Cartucho 400g"
   },
   { 
     id: "10", 
     name: "Cable Cobre Cal. 12 (100m)", 
-    sku: "CAB-012", 
-    stock: 12, 
+    sku: "CBL-CU12-RED", 
+    stock: 15, 
     minStock: 10, 
     price: 2450, 
     category: "Eléctrico",
-    image: "https://images.unsplash.com/photo-1558444479-bd3230f25974?auto=format&fit=crop&q=80&w=400",
-    specs: "Calibre: 12 AWG, Longitud: 100m, Aislamiento: THW-2, Voltaje: 600V"
-  },
+    image: "https://images.unsplash.com/photo-1495034466318-ae9334be6212?auto=format&fit=crop&q=80&w=800",
+    specs: "Calibre: 12 AWG, Material: Cobre, Longitud: 100m, Aislamiento: THHN/THWN"
+  }
 ];
 
 export const alerts = [
