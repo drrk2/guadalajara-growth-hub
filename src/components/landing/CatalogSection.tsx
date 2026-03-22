@@ -131,7 +131,7 @@ export function CatalogSection() {
                 <DialogTrigger asChild>
                   <Card className="h-full overflow-hidden border-white/5 bg-white/5 backdrop-blur-md transition-all duration-300 hover:shadow-2xl hover:border-primary/50 industrial-shadow group cursor-pointer border-t-2 border-t-transparent hover:border-t-primary rounded-none">
                     <div className="h-60 overflow-hidden relative">
-                      {product.image && product.image.startsWith('http') ? (
+                      {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image/')) ? (
                         <img 
                           src={product.image} 
                           alt={product.name} 
@@ -171,8 +171,8 @@ export function CatalogSection() {
                   </Card>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl bg-[#0a0a0a] border-white/10 text-white overflow-hidden p-0 rounded-none">
-                  <div className={product.image && product.image.startsWith('http') ? "grid md:grid-cols-2 gap-0" : "flex flex-col"}>
-                    {product.image && product.image.startsWith('http') && (
+                  <div className={product.image && (product.image.startsWith('http') || product.image.startsWith('data:image/')) ? "grid md:grid-cols-2 gap-0" : "flex flex-col"}>
+                    {product.image && (product.image.startsWith('http') || product.image.startsWith('data:image/')) && (
                       <div className="aspect-square md:h-full relative overflow-hidden bg-black">
                         <img src={product.image} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />

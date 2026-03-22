@@ -62,7 +62,6 @@ const InventarioPage = () => {
       sku: formData.get("sku") as string,
       category: formData.get("category") as string,
       stock: Number(formData.get("stock")),
-      min_stock: Number(formData.get("min_stock")),
       price: Number(formData.get("price")),
       image: formData.get("image") as string || "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=400",
       specs: JSON.stringify({}),
@@ -87,7 +86,6 @@ const InventarioPage = () => {
       sku: formData.get("sku") as string,
       category: formData.get("category") as string,
       stock: Number(formData.get("stock")),
-      min_stock: Number(formData.get("min_stock")),
       price: Number(formData.get("price")),
       image: formData.get("image") as string,
     };
