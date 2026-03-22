@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Search, AlertTriangle, Package, Plus, RefreshCw, Edit2, Trash2 } from "lucide-react";
+import { Search, AlertTriangle, Package, Plus, RefreshCw, Edit2, Trash2, Image as ImageIcon, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -21,7 +21,9 @@ const InventarioPage = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+   const [editingProduct, setEditingProduct] = useState<any>(null);
+   const [uploading, setUploading] = useState(false);
+   const [tempImageUrl, setTempImageUrl] = useState("");
 
   const fetchInventory = async () => {
     setLoading(true);
@@ -57,7 +59,43 @@ const InventarioPage = () => {
     return matchSearch && matchCat;
   });
 
-  const lowStockCount = products.filter(p => p.stock < (p.min_stock || 10)).length;
+   const lowStockCount = products.filter(p => p.stock < (p.min_stock || 10)).length;
+ 
+   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+ 
+     // Validar tipo de archivo
+     if (!file.type.startsWith('image/')) {
+       toast({ variant: "destructive", title: "Formato no válido", description: "Por favor sube una imagen (.png, .jpg, .webp)" });
+       return;
+     }
+ 
+     setUploading(true);
+     try {
+       const fileExt = file.name.split('.').pop();
+       const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+       const filePath = `${fileName}`;
+ 
+       const { error: uploadError } = await supabase.storage
+         .from('products')
+         .upload(filePath, file);
+ 
+       if (uploadError) throw uploadError;
+ 
+       const { data: { publicUrl } } = supabase.storage
+         .from('products')
+         .getPublicUrl(filePath);
+ 
+       setTempImageUrl(publicUrl);
+       toast({ title: "Imagen subida", description: "La imagen se guardó en la nube." });
+     } catch (error: any) {
+       console.error("Error upload:", error);
+       toast({ variant: "destructive", title: "Error de subida", description: "Asegúrate de haber creado el bucket 'products' como público en tu panel de Supabase." });
+     } finally {
+       setUploading(false);
+     }
+   };
 
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -137,10 +175,10 @@ const InventarioPage = () => {
           <Button variant="outline" onClick={fetchInventory} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo Insumo</Button>
-            </DialogTrigger>
+           <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if(!open) setTempImageUrl(""); }}>
+             <DialogTrigger asChild>
+               <Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo Insumo</Button>
+             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Añadir al Inventario</DialogTitle>
@@ -176,11 +214,68 @@ const InventarioPage = () => {
                     <Input id="min_stock" name="min_stock" type="number" placeholder="5" required />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="image">URL de Imagen</Label>
-                  <Input id="image" name="image" placeholder="https://..." />
-                </div>
-                <Button type="submit" className="w-full">Guardar en Supabase</Button>
+                 <div className="space-y-4 pt-2">
+                   <Label>Imagen del Producto</Label>
+                   <div className="flex flex-col gap-4">
+                     {/* Preview Box */}
+                     <div className="h-40 w-full border border-dashed border-white/10 flex items-center justify-center bg-white/5 relative group overflow-hidden">
+                       {(tempImageUrl || editingProduct?.image) ? (
+                         <img 
+                           src={tempImageUrl || editingProduct?.image} 
+                           alt="Preview" 
+                           className="h-full w-full object-contain p-2"
+                         />
+                       ) : (
+                         <div className="flex flex-col items-center opacity-20">
+                           <ImageIcon className="h-10 w-10 mb-2" />
+                           <span className="text-[10px] uppercase font-bold tracking-widest">Sin Vista Previa</span>
+                         </div>
+                       )}
+                       {uploading && (
+                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20">
+                            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                         </div>
+                       )}
+                     </div>
+
+                     <div className="grid grid-cols-1 gap-2">
+                       <div className="relative">
+                          <Input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            id="file-upload"
+                            onChange={(e) => handleFileUpload(e)}
+                          />
+                          <Label 
+                            htmlFor="file-upload" 
+                            className="flex items-center justify-center gap-2 w-full h-11 border border-white/10 hover:bg-white/5 cursor-pointer transition-colors text-[10px] uppercase font-bold tracking-widest"
+                          >
+                            <Upload className="h-4 w-4" /> 
+                            {uploading ? "SUBIENDO..." : "Elegir archivo del PC"}
+                          </Label>
+                       </div>
+                       
+                       <div className="flex items-center gap-2">
+                          <div className="h-px bg-white/5 flex-1" />
+                          <span className="text-[10px] text-white/20 uppercase font-bold tracking-widest">O pega una URL</span>
+                          <div className="h-px bg-white/5 flex-1" />
+                       </div>
+
+                       <Input 
+                        id="image" 
+                        name="image" 
+                        placeholder="https://..." 
+                        value={tempImageUrl}
+                        onChange={(e) => setTempImageUrl(e.target.value)}
+                        className="text-xs"
+                       />
+                     </div>
+                   </div>
+                 </div>
+                 <Button type="submit" className="w-full h-12 skew-x-[-12deg] font-bold uppercase tracking-widest" disabled={uploading}>
+                    <span className="skew-x-[12deg]">Guardar en Supabase</span>
+                 </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -301,8 +396,8 @@ const InventarioPage = () => {
       </Card>
 
       {/* Edit Dialog */}
-      {editingProduct && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+       {editingProduct && (
+         <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if(!open) { setTempImageUrl(""); setEditingProduct(null); } }}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Editar Producto</DialogTitle>
@@ -338,11 +433,61 @@ const InventarioPage = () => {
                   <Input id="edit-min_stock" name="min_stock" type="number" defaultValue={editingProduct.min_stock} required />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-image">URL de Imagen</Label>
-                <Input id="edit-image" name="image" defaultValue={editingProduct.image} />
-              </div>
-              <Button type="submit" className="w-full">Actualizar en Supabase</Button>
+               <div className="space-y-4 pt-2">
+                 <Label>Imagen del Producto</Label>
+                 <div className="flex flex-col gap-4">
+                   <div className="h-40 w-full border border-dashed border-white/10 flex items-center justify-center bg-white/5 relative overflow-hidden">
+                     {(tempImageUrl || editingProduct.image) ? (
+                       <img 
+                         src={tempImageUrl || editingProduct.image} 
+                         alt="Preview" 
+                         className="h-full w-full object-contain p-2"
+                       />
+                     ) : (
+                       <div className="flex flex-col items-center opacity-20">
+                         <ImageIcon className="h-10 w-10 mb-2" />
+                         <span className="text-[10px] uppercase font-bold tracking-widest">Sin Vista Previa</span>
+                       </div>
+                     )}
+                     {uploading && (
+                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20">
+                          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                       </div>
+                     )}
+                   </div>
+
+                   <div className="grid grid-cols-1 gap-2">
+                     <div className="relative">
+                        <Input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          id="edit-file-upload"
+                          onChange={(e) => handleFileUpload(e, true)}
+                        />
+                        <Label 
+                          htmlFor="edit-file-upload" 
+                          className="flex items-center justify-center gap-2 w-full h-11 border border-white/10 hover:bg-white/5 cursor-pointer transition-colors text-[10px] uppercase font-bold tracking-widest"
+                        >
+                          <Upload className="h-4 w-4" /> 
+                          {uploading ? "SUBIENDO..." : "Cambiar Imagen desde PC"}
+                        </Label>
+                     </div>
+                     
+                     <Input 
+                      id="edit-image" 
+                      name="image" 
+                      defaultValue={tempImageUrl || editingProduct.image}
+                      key={tempImageUrl || editingProduct.image} 
+                      placeholder="https://..." 
+                      className="text-xs"
+                     />
+                   </div>
+                 </div>
+               </div>
+               <Button type="submit" className="w-full h-12 skew-x-[-12deg] font-bold uppercase tracking-widest" disabled={uploading}>
+                  <span className="skew-x-[12deg]">Actualizar en Supabase</span>
+               </Button>
             </form>
           </DialogContent>
         </Dialog>
