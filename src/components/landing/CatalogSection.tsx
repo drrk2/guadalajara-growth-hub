@@ -131,11 +131,18 @@ export function CatalogSection() {
                 <DialogTrigger asChild>
                   <Card className="h-full overflow-hidden border-white/5 bg-white/5 backdrop-blur-md transition-all duration-300 hover:shadow-2xl hover:border-primary/50 industrial-shadow group cursor-pointer border-t-2 border-t-transparent hover:border-t-primary rounded-none">
                     <div className="h-60 overflow-hidden relative">
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" 
-                      />
+                      {product.image && product.image.startsWith('http') ? (
+                        <img 
+                          src={product.image} 
+                          alt={product.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-[#111] flex flex-col items-center justify-center transition-transform duration-700 group-hover:scale-110">
+                          <Box className="h-10 w-10 text-white/10 mb-2" />
+                          <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Sin Imagen</span>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
                       <div className="absolute bottom-4 left-4">
                         <Badge className="bg-primary hover:bg-primary text-white border-none px-3 py-1 font-bold rounded-none skew-x-[-12deg]">
@@ -166,8 +173,15 @@ export function CatalogSection() {
                 <DialogContent className="max-w-4xl bg-[#0a0a0a] border-white/10 text-white overflow-hidden p-0 rounded-none">
                   <div className="grid md:grid-cols-2 gap-0">
                     <div className="aspect-square md:h-full relative overflow-hidden bg-black">
-                      <img src={product.image} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                      {product.image && product.image.startsWith('http') ? (
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] p-6 text-center">
+                          <Box className="h-24 w-24 text-white/5 mb-6" />
+                          <span className="text-xs font-bold text-white/20 uppercase tracking-[0.3em]">Imagen No Disponible</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />
                     </div>
                     <div className="p-10 flex flex-col justify-between">
                       <div>

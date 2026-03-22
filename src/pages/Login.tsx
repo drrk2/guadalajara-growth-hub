@@ -5,41 +5,57 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { tenant } from "@/data/mock-data";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, ArrowLeft, Shield, X, RefreshCw } from "lucide-react";
+import { Zap, ArrowLeft, Shield, X, RefreshCw, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSystem } from "@/context/SystemContext";
 
 const Login = () => {
-  const { login } = useSystem();
+  const { login, signUp } = useSystem();
+  const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Real Supabase Auth via SystemContext
-    const { error } = await login(email, password);
+    let error;
+    if (isLogin) {
+      const result = await login(email, password);
+      error = result.error;
+    } else {
+      const result = await signUp(email, password, name);
+      error = result.error;
+    }
     
     setLoading(false);
 
     if (error) {
        toast({
         variant: "destructive",
-        title: "Error de Autenticación",
+        title: isLogin ? "Error de Autenticación" : "Error de Registro",
         description: error.message || "Usuario o contraseña inválidos.",
       });
       return;
     }
 
     toast({
-      title: `Acceso Autorizado`,
-      description: `Autenticación exitosa. Cargando entorno de trabajo...`,
+      title: isLogin ? `Acceso Autorizado` : `Cuenta Creada`,
+      description: isLogin ? `Autenticación exitosa. Cargando entorno de trabajo...` : `Tu cuenta cliente ha sido creada correctamente.`,
     });
-    navigate("/dashboard");
+    
+    // The SystemContext handles the actual loading state and redirecting logic through RequireAuth,
+    // but we can manually push them to home if they just signed up, or dashboard if they logged in.
+    // The safest is just navigating to / and letting RequireAuth redirect if they are admin.
+    if (!isLogin) {
+       navigate("/");
+    } else {
+       navigate("/dashboard");
+    }
   };
 
   return (
@@ -87,22 +103,42 @@ const Login = () => {
           <CardHeader className="space-y-4 text-center pt-10 pb-6">
             <div className="flex justify-center">
               <div className="h-16 w-16 rounded-none skew-x-[-12deg] bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
-                <Shield className="h-8 w-8 skew-x-[12deg]" />
+                {isLogin ? <Shield className="h-8 w-8 skew-x-[12deg]" /> : <UserPlus className="h-8 w-8 skew-x-[12deg]" />}
               </div>
             </div>
             <div>
               <CardTitle className="text-3xl font-display font-black tracking-tight text-white uppercase">{tenant.name}</CardTitle>
-              <p className="text-[10px] font-bold text-primary tracking-[0.4em] uppercase mt-2">Acceso de Personal</p>
+              <p className="text-[10px] font-bold text-primary tracking-[0.4em] uppercase mt-2">
+                {isLogin ? "Acceso al Sistema" : "Registro de Cliente"}
+              </p>
             </div>
           </CardHeader>
 
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleAuth}>
             <CardContent className="space-y-6 px-8">
+              {!isLogin && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }} 
+                  animate={{ opacity: 1, height: 'auto' }} 
+                  className="space-y-2"
+                >
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Nombre Completo</label>
+                  <Input
+                    type="text"
+                    placeholder="Juan Pérez"
+                    required={!isLogin}
+                    disabled={loading}
+                    className="bg-white/5 border-white/10 text-white h-12 rounded-none focus:border-primary transition-all placeholder:text-white/10"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </motion.div>
+              )}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Correo Corporativo</label>
                 <Input
                   type="email"
-                  placeholder="admin@eisenmx.com"
+                  placeholder="ejemplo@empresa.com"
                   required
                   disabled={loading}
                   className="bg-white/5 border-white/10 text-white h-12 rounded-none focus:border-primary transition-all placeholder:text-white/10"
@@ -117,6 +153,7 @@ const Login = () => {
                   placeholder="••••••••"
                   required
                   disabled={loading}
+                  min={6}
                   className="bg-white/5 border-white/10 text-white h-12 rounded-none focus:border-primary transition-all placeholder:text-white/10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -124,7 +161,7 @@ const Login = () => {
               </div>
             </CardContent>
             
-            <CardFooter className="p-8 pt-4">
+            <CardFooter className="p-8 pt-4 flex flex-col gap-4">
               <Button 
                 type="submit" 
                 disabled={loading}
@@ -133,12 +170,24 @@ const Login = () => {
                 {!loading && <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-[45deg]" />}
                 <span className="skew-x-[12deg] flex items-center justify-center gap-2">
                   {loading ? (
-                     <>AUTENTICANDO <RefreshCw className="h-4 w-4 animate-spin text-white" /></>
+                     <>PROCESANDO <RefreshCw className="h-4 w-4 animate-spin text-white" /></>
                   ) : (
-                     <>AUTENTICAR <Zap className="h-4 w-4 fill-white" /></>
+                     <>
+                        {isLogin ? "AUTENTICAR" : "CREAR CUENTA"} 
+                        {isLogin ? <Zap className="h-4 w-4 fill-white" /> : <UserPlus className="h-4 w-4" />}
+                     </>
                   )}
                 </span>
               </Button>
+              
+              <button
+                type="button"
+                className="text-[10px] text-white/40 hover:text-white font-bold uppercase tracking-widest transition-colors mt-2"
+                onClick={() => setIsLogin(!isLogin)}
+                disabled={loading}
+              >
+                {isLogin ? "¿Eres cliente nuevo? Regístrate aquí" : "¿Ya tienes cuenta? Inicia sesión"}
+              </button>
             </CardFooter>
           </form>
         </Card>
