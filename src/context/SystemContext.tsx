@@ -111,6 +111,7 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
                 role: data?.role || "client",
                 name: data?.full_name
             });
+            console.log(`[AUTH DIAGNOSTIC] Perfil cargado. Rol asignado: ${data?.role || "client"}`);
         } catch (err) {
             console.error("Profile fetch error:", err);
         } finally {
@@ -119,12 +120,23 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const login = async (email: string, password: string): Promise<AuthResponse> => {
+        setLoadingAuth(true);
         try {
-            const { error }: any = await withTimeout(Promise.resolve(supabase.auth.signInWithPassword({ email, password })));
-            if (error) console.error("Login Supabase Error:", error);
-            return { error: error || null };
+            const { data, error }: any = await withTimeout(Promise.resolve(supabase.auth.signInWithPassword({ email, password })));
+            if (error) {
+                setLoadingAuth(false);
+                return { error };
+            }
+
+            if (data?.user) {
+                // Wait for the profile to be fetched before finishing the login process
+                await fetchProfile(data.user.id, data.user.email!);
+                console.log(`[AUTH DIAGNOSTIC] Login exitoso. Usuario: ${data.user.email}`);
+            }
+
+            return { error: null };
         } catch (err: any) {
-            console.error("Login Timeout/Network Error:", err);
+            setLoadingAuth(false);
             return { error: err };
         }
     };
