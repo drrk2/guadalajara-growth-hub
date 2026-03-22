@@ -216,8 +216,8 @@ export function CatalogSection() {
                                  <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
                                  <Box className="h-24 w-24 text-white/10 relative z-10" strokeWidth={1} />
                               </div>
-                              <p className="text-[10px] font-bold text-primary tracking-[0.5em] uppercase mb-2">Technical Documentation</p>
-                              <h4 className="text-white/20 font-black text-xl uppercase tracking-tighter italic">Imagen en Proceso</h4>
+                              <p className="text-[10px] font-bold text-primary tracking-[0.5em] uppercase mb-2 opacity-80">Technical Spec Sheet</p>
+                              <h4 className="text-white/60 font-black text-xl uppercase tracking-tighter italic">Sin Imagen Disponible</h4>
                            </div>
                         </div>
                       )}
@@ -236,14 +236,14 @@ export function CatalogSection() {
                             <div className="h-px w-8 bg-primary" />
                             <span className="text-[10px] font-bold text-primary uppercase tracking-[0.4em]">{product.category}</span>
                         </div>
-                        <DialogTitle className="text-4xl font-black tracking-tight uppercase leading-tight mb-4">
+                        <DialogTitle className="text-4xl font-black tracking-tight uppercase leading-tight mb-4 text-white">
                           {product.name}
                         </DialogTitle>
-                        <p className="text-white/40 text-sm mb-8 font-mono">SKU ID: {product.sku}</p>
+                        <p className="text-white/60 text-sm mb-8 font-mono tracking-widest uppercase">ID TÉCNICO: <span className="text-primary">{product.sku}</span></p>
                         
                         <div className="space-y-6">
                           <div>
-                            <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20 mb-4 flex items-center gap-2">
+                            <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40 mb-4 flex items-center gap-2">
                                 ESPECIFICACIONES TÉCNICAS
                             </h4>
                             <div className="grid grid-cols-1 gap-2">
