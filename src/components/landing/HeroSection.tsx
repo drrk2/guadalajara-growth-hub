@@ -33,9 +33,9 @@ export function HeroSection() {
               <Zap className="h-3 w-3 animate-pulse" /> Soluciones Electromecánicas Elite
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-display font-bold leading-[0.9] mb-8 tracking-tighter text-white">
+            <h1 className="text-6xl md:text-8xl font-display font-bold leading-[1.1] mb-8 tracking-tight text-white py-2">
               IMPULSANDO LA <br />
-              <span className="text-gradient-red italic uppercase">Industria 4.0</span>
+              <span className="text-gradient-red italic uppercase px-2">Industria 4.0</span>
             </h1>
 
             <p className="text-xl md:text-2xl text-white/60 mb-10 max-w-2xl font-light leading-relaxed border-l-2 border-primary/50 pl-6">

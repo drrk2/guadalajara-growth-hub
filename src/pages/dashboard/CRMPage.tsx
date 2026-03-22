@@ -1,76 +1,139 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, MessageSquare, Phone, Mail } from "lucide-react";
+import { UserPlus, MessageSquare, Phone, Mail, Clock, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-
-const clients = [
-    { id: "1", name: "Carnicería Don Juan", contact: "Juan Pérez", email: "juan@donjuan.com", status: "Frecuente", lastSale: "2026-03-01" },
-    { id: "2", name: "Inmobiliaria Jalisco", contact: "Gaby Mendoza", email: "gaby@jalisco.mx", status: "Nuevo", lastSale: "2026-02-15" },
-    { id: "3", name: "Eventos Especiales GDL", contact: "Roberto Díaz", email: "roberto@eventosgdl.com", status: "Frecuente", lastSale: "2026-03-05" },
-];
+import { useSystem } from "@/context/SystemContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const CRMPage = () => {
+    const { employees, loadingEmployees, upsertEmployee } = useSystem();
+    const { toast } = useToast();
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    if (loadingEmployees) {
+        return (
+            <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+                <RefreshCw className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm font-bold uppercase tracking-widest opacity-50">Cargando Colaboradores...</p>
+            </div>
+        );
+    }
+
+    const handleAddEmployee = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const newEmp = {
+            name: fd.get("name") as string,
+            email: fd.get("email") as string,
+            position: fd.get("position") as string,
+            salary: Number(fd.get("salary")),
+            status: "active",
+            startDate: new Date().toISOString().split('T')[0]
+        };
+
+        try {
+            await upsertEmployee(newEmp);
+            setIsDialogOpen(false);
+            toast({ title: "Colaborador añadido", description: `${newEmp.name} se ha registrado con éxito.` });
+        } catch (err) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el colaborador." });
+        }
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-display font-bold">CRM / Clientes</h1>
-                    <p className="text-sm text-muted-foreground">Gestión de relaciones y prospectos locales</p>
+                    <h1 className="text-2xl font-display font-bold">Capital Humano / CRM</h1>
+                    <p className="text-sm text-muted-foreground">Gestión de colaboradores y equipo local</p>
                 </div>
-                <Button className="gap-2"><UserPlus className="h-4 w-4" /> Nuevo Cliente</Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="gap-2"><UserPlus className="h-4 w-4" /> Nuevo Colaborador</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader><DialogTitle>Registrar Nuevo Colaborador</DialogTitle></DialogHeader>
+                        <form onSubmit={handleAddEmployee} className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Nombre Completo</Label>
+                                <Input name="name" placeholder="Ej. Juan Pérez" required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Correo Electrónico</Label>
+                                <Input name="email" type="email" placeholder="juan@eisen.mx" required />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Puesto</Label>
+                                    <Input name="position" placeholder="Ej. Operador" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Salario Mensual</Label>
+                                    <Input name="salary" type="number" placeholder="0.00" required />
+                                </div>
+                            </div>
+                            <Button type="submit" className="w-full">Guardar en Base de Datos</Button>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Clientes</p>
-                    <p className="text-2xl font-bold mt-1">128</p>
+                <Card className="p-4 text-center border-l-4 border-l-primary">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Equipo</p>
+                    <p className="text-2xl font-black mt-1">{employees.length}</p>
                 </Card>
-                <Card className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Nuevos (Mes)</p>
-                    <p className="text-2xl font-bold mt-1 text-success">+12</p>
+                <Card className="p-4 text-center border-l-4 border-l-success">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Activos</p>
+                    <p className="text-2xl font-black mt-1 text-success">{employees.filter(e => e.status === 'active').length}</p>
                 </Card>
-                <Card className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Tasa Retención</p>
-                    <p className="text-2xl font-bold mt-1">85%</p>
+                <Card className="p-4 text-center border-l-4 border-l-warning">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Inactivos</p>
+                    <p className="text-2xl font-black mt-1 text-warning">{employees.filter(e => e.status !== 'active').length}</p>
                 </Card>
-                <Card className="p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Prospectos</p>
-                    <p className="text-2xl font-bold mt-1 text-info">24</p>
+                <Card className="p-4 text-center border-l-4 border-l-info">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Costo Mensual</p>
+                    <p className="text-2xl font-black mt-1 text-info">
+                        ${employees.reduce((a, b) => a + (b.salary || 0), 0).toLocaleString()}
+                    </p>
                 </Card>
             </div>
 
-            <Card>
+            <Card className="overflow-hidden">
                 <CardContent className="p-0">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="bg-muted/50">
                             <TableRow>
-                                <TableHead>Cliente</TableHead>
-                                <TableHead>Contacto</TableHead>
-                                <TableHead>Estatus</TableHead>
-                                <TableHead>Última Venta</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
+                                <TableHead className="font-bold">Colaborador</TableHead>
+                                <TableHead className="font-bold">Puesto</TableHead>
+                                <TableHead className="font-bold">Estatus</TableHead>
+                                <TableHead className="font-bold">Ingreso</TableHead>
+                                <TableHead className="text-right font-bold">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {clients.map((c) => (
-                                <TableRow key={c.id}>
+                            {employees.map((c) => (
+                                <TableRow key={c.id} className="hover:bg-muted/20 transition-colors">
                                     <TableCell>
-                                        <div className="font-medium">{c.name}</div>
-                                        <div className="text-xs text-muted-foreground">{c.email}</div>
+                                        <div className="font-bold">{c.name}</div>
+                                        <div className="text-xs text-muted-foreground font-mono">{c.email}</div>
                                     </TableCell>
-                                    <TableCell>{c.contact}</TableCell>
+                                    <TableCell className="text-sm">{c.position}</TableCell>
                                     <TableCell>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs ${c.status === 'Frecuente' ? 'bg-success/10 text-success' : 'bg-info/10 text-info'}`}>
-                                            {c.status}
+                                        <span className={`px-2 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wider ${c.status === 'active' ? 'bg-success/10 text-success border border-success/20' : 'bg-muted text-muted-foreground border border-muted-foreground/20'}`}>
+                                            {c.status === 'active' ? 'ACTIVO' : 'INACTIVO'}
                                         </span>
                                     </TableCell>
-                                    <TableCell>{c.lastSale}</TableCell>
+                                    <TableCell className="text-sm font-mono text-muted-foreground">{c.startDate || 'N/A'}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8"><MessageSquare className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8"><Mail className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Phone className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><MessageSquare className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Mail className="h-4 w-4" /></Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>

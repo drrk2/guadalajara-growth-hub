@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Settings2, Zap, Wrench, Box, MessageCircle, Info, RefreshCw, ShoppingCart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/context/CartContext";
+import { useSystem } from "@/context/SystemContext";
 
 interface Product {
   id: string;
@@ -30,41 +31,8 @@ const categoryIcons: Record<string, any> = {
 };
 
 export function CatalogSection() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { inventory: products, loadingInventory: loading } = useSystem();
   const { addItem } = useCart();
-
-  useEffect(() => {
-    async function fetchProducts() {
-      console.log("Iniciando carga de catálogo desde Supabase...");
-      
-      const fetchPromise = supabase
-        .from('products')
-        .select('*')
-        .order('name');
-
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout de conexión (10s)")), 10000)
-      );
-
-      try {
-        const { data, error }: any = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        if (error) {
-          console.error("Error de Supabase:", error);
-          throw error;
-        }
-        
-        console.log("Productos recibidos:", data?.length || 0);
-        if (data) setProducts(data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProducts();
-  }, []);
 
   const formatMoney = (amount: any) => {
     const value = typeof amount === 'number' ? amount : parseFloat(amount) || 0;

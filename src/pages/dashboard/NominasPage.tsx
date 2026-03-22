@@ -11,7 +11,7 @@ const formatMoney = (n: number) => `$${n.toLocaleString("es-MX")}`;
 
 const NominasPage = () => {
   const { toast } = useToast();
-  const { employees, payroll, setPayroll } = useSystem();
+  const { employees, payroll, upsertPayroll, loadingEmployees, loadingPayroll } = useSystem();
 
   const activeEmployees = employees.filter(e => e.status === "active");
   const currentPeriod = "2026-03";
@@ -21,38 +21,49 @@ const NominasPage = () => {
   const pendientes = periodPayroll.filter(p => p.status === "pending");
   const pagadas = periodPayroll.filter(p => p.status === "paid");
 
-  const handlePayAll = () => {
-    setPayroll(prev => prev.map(p =>
-      p.period === currentPeriod && p.status === "pending"
-        ? { ...p, status: "paid", paidDate: new Date().toISOString().split('T')[0] }
-        : p
-    ));
-    toast({ title: "Nóminas masivas", description: "Todos los pendientes del periodo actual han sido pagados." });
+  const handlePayAll = async () => {
+    const pending = periodPayroll.filter(p => p.status === "pending");
+    try {
+        const promises = pending.map(p => upsertPayroll({
+            ...p,
+            status: "paid",
+            paidDate: new Date().toISOString().split('T')[0]
+        }));
+        await Promise.all(promises);
+        toast({ title: "Nóminas masivas", description: "Todos los pendientes del periodo actual han sido pagados." });
+    } catch (err) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudieron procesar todos los pagos." });
+    }
   };
 
-  const toggleStatus = (employeeId: string) => {
-    setPayroll(prev => {
-      const existingRef = prev.find(p => p.employeeId === employeeId && p.period === currentPeriod);
-      if (existingRef) {
-        return prev.map(p => {
-          if (p.employeeId === employeeId && p.period === currentPeriod) {
-            const isPaid = p.status === "paid";
-            toast({
-              title: isPaid ? "Pago Revertido" : "Pago Confirmado",
-              description: isPaid ? "El estatus volvió a pendiente." : "El empleado ha sido pagado.",
-              variant: isPaid ? "destructive" : "default"
-            });
-            return {
-              ...p,
-              status: isPaid ? "pending" : "paid",
-              paidDate: isPaid ? undefined : new Date().toISOString().split('T')[0]
-            };
-          }
-          return p;
+  const toggleStatus = async (employeeId: string) => {
+    const existingRef = payroll.find(p => p.employeeId === employeeId && p.period === currentPeriod);
+    
+    // If no payroll entry exists for this period, we should probably create one
+    const p = existingRef || {
+        employeeId,
+        period: currentPeriod,
+        status: "pending",
+        amount: employees.find(e => e.id === employeeId)?.salary || 0
+    };
+
+    const isPaid = p.status === "paid";
+    
+    try {
+        await upsertPayroll({
+            ...p,
+            status: isPaid ? "pending" : "paid",
+            paidDate: isPaid ? null : new Date().toISOString().split('T')[0]
         });
-      }
-      return prev;
-    });
+        
+        toast({
+            title: isPaid ? "Pago Revertido" : "Pago Confirmado",
+            description: isPaid ? "El estatus volvió a pendiente." : "El empleado ha sido pagado.",
+            variant: isPaid ? "destructive" : "default"
+        });
+    } catch (err) {
+        toast({ variant: "destructive", title: "Error de red", description: "No se pudo actualizar el estatus en el servidor." });
+    }
   };
 
   return (

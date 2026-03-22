@@ -24,17 +24,34 @@ interface SystemContextType {
     login: (email: string, password: string) => Promise<AuthResponse>;
     logout: () => Promise<AuthResponse>;
     signUp: (email: string, password: string, name: string) => Promise<AuthResponse>;
-    // Real products state from Supabase
+    // Real-time states from Supabase
     inventory: any[];
     loadingInventory: boolean;
     refreshInventory: () => Promise<void>;
+    
     employees: any[];
-    setEmployees: React.Dispatch<React.SetStateAction<any[]>>;
+    loadingEmployees: boolean;
+    refreshEmployees: () => Promise<void>;
+    
     payroll: any[];
-    setPayroll: React.Dispatch<React.SetStateAction<any[]>>;
+    loadingPayroll: boolean;
+    refreshPayroll: () => Promise<void>;
+    
+    expenses: any[];
+    loadingExpenses: boolean;
+    refreshExpenses: () => Promise<void>;
+    
+    sales: any[];
+    loadingSales: boolean;
+    refreshSales: () => Promise<void>;
+    
     alerts: any[];
     setAlerts: React.Dispatch<React.SetStateAction<any[]>>;
-    processSale: (cart: any[]) => void;
+    
+    processSale: (cart: any[]) => Promise<void>;
+    upsertEmployee: (employee: any) => Promise<void>;
+    upsertPayroll: (payrollItem: any) => Promise<void>;
+    addExpense: (expense: any) => Promise<void>;
 }
 
 const SystemContext = createContext<SystemContextType | undefined>(undefined);
@@ -44,8 +61,14 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [inventory, setInventory] = useState<any[]>([]);
     const [loadingInventory, setLoadingInventory] = useState(true);
-    const [employees, setEmployees] = useState(initialEmployees);
-    const [payroll, setPayroll] = useState(initialPayroll);
+    const [employees, setEmployees] = useState<any[]>([]);
+    const [loadingEmployees, setLoadingEmployees] = useState(true);
+    const [payroll, setPayroll] = useState<any[]>([]);
+    const [loadingPayroll, setLoadingPayroll] = useState(true);
+    const [expenses, setExpenses] = useState<any[]>([]);
+    const [loadingExpenses, setLoadingExpenses] = useState(true);
+    const [sales, setSales] = useState<any[]>([]);
+    const [loadingSales, setLoadingSales] = useState(true);
     const [alerts, setAlerts] = useState(initialAlerts);
 
     const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> => {
@@ -76,12 +99,37 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
         const init = async () => {
             await getSession();
             await refreshInventory();
+            await refreshEmployees();
+            await refreshPayroll();
+            await refreshExpenses();
+            await refreshSales();
         };
 
         init();
 
+        // Real-time subscriptions
+        const inventoryChannel = supabase.channel('inventory-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => refreshInventory())
+            .subscribe();
+
+        const employeeChannel = supabase.channel('employee-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => refreshEmployees())
+            .subscribe();
+
+        const payrollChannel = supabase.channel('payroll-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'payroll' }, () => refreshPayroll())
+            .subscribe();
+
+        const expensesChannel = supabase.channel('expenses-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => refreshExpenses())
+            .subscribe();
+
+        const salesChannel = supabase.channel('sales-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, () => refreshSales())
+            .subscribe();
+
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session) {
                 await fetchProfile(session.user.id, session.user.email!);
             } else {
@@ -90,7 +138,14 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            authSub.unsubscribe();
+            supabase.removeChannel(inventoryChannel);
+            supabase.removeChannel(employeeChannel);
+            supabase.removeChannel(payrollChannel);
+            supabase.removeChannel(expensesChannel);
+            supabase.removeChannel(salesChannel);
+        };
     }, []);
 
     const fetchProfile = async (userId: string, email: string) => {
@@ -174,7 +229,7 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
         setLoadingInventory(true);
         try {
             const { data, error } = await withTimeout(
-                Promise.resolve(supabase.from('products').select('*').order('created_at', { ascending: false }))
+                Promise.resolve(supabase.from('products').select('*').order('name'))
             );
             if (error) throw error;
             setInventory(data || []);
@@ -182,6 +237,58 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error refreshing inventory:", error);
         } finally {
             setLoadingInventory(false);
+        }
+    };
+
+    const refreshEmployees = async () => {
+        setLoadingEmployees(true);
+        try {
+            const { data, error } = await supabase.from('employees').select('*').order('name');
+            if (error) throw error;
+            setEmployees(data || []);
+        } catch (error) {
+            console.error("Error fetching employees:", error);
+        } finally {
+            setLoadingEmployees(false);
+        }
+    };
+
+    const refreshPayroll = async () => {
+        setLoadingPayroll(true);
+        try {
+            const { data, error } = await supabase.from('payroll').select('*').order('period', { ascending: false });
+            if (error) throw error;
+            setPayroll(data || []);
+        } catch (error) {
+            console.error("Error fetching payroll:", error);
+        } finally {
+            setLoadingPayroll(false);
+        }
+    };
+
+    const refreshExpenses = async () => {
+        setLoadingExpenses(true);
+        try {
+            const { data, error } = await supabase.from('expenses').select('*').order('date', { ascending: false });
+            if (error) throw error;
+            setExpenses(data || []);
+        } catch (error) {
+            console.error("Error fetching expenses:", error);
+        } finally {
+            setLoadingExpenses(false);
+        }
+    };
+
+    const refreshSales = async () => {
+        setLoadingSales(true);
+        try {
+            const { data, error } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            setSales(data || []);
+        } catch (error) {
+            console.error("Error fetching sales:", error);
+        } finally {
+            setLoadingSales(false);
         }
     };
 
@@ -196,28 +303,64 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
 
     const processSale = async (cart: any[]) => {
         try {
+            // 1. Record the sale
+            const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const { data: sale, error: saleError } = await supabase.from('sales').insert([{
+                total_amount: totalAmount,
+                items: JSON.stringify(cart),
+                customer_id: user?.id,
+                status: 'completed'
+            }]).select().single();
+
+            if (saleError) throw saleError;
+
+            // 2. Update stock
             const updatePromises = cart.map(item => {
-                // Determine current stock from our local inventory first
                 const currentProduct = inventory.find(p => p.id === item.id);
                 const newStock = Math.max(0, (currentProduct?.stock || 0) - item.quantity);
-                
-                return supabase
-                    .from('products')
-                    .update({ stock: newStock })
-                    .eq('id', item.id);
+                return supabase.from('products').update({ stock: newStock }).eq('id', item.id);
             });
 
-            const results = await Promise.all(updatePromises);
-            const errors = results.filter(r => r.error);
+            await Promise.all(updatePromises);
             
-            if (errors.length > 0) {
-                console.error("Errors during stock update:", errors);
-            }
-            
-            // Re-fetch to sync
+            // Re-fetch handled by realtime channel, but manual refresh for speed
             await refreshInventory();
         } catch (err) {
-            console.error("CRITICAL: Failed to process sale in Supabase:", err);
+            console.error("Failed to process sale:", err);
+            throw err;
+        }
+    };
+
+    const upsertEmployee = async (employee: any) => {
+        try {
+            const { error } = await supabase.from('employees').upsert([employee]);
+            if (error) throw error;
+            await refreshEmployees();
+        } catch (err) {
+            console.error("Error upserting employee:", err);
+            throw err;
+        }
+    };
+
+    const upsertPayroll = async (payrollItem: any) => {
+        try {
+            const { error } = await supabase.from('payroll').upsert([payrollItem]);
+            if (error) throw error;
+            await refreshPayroll();
+        } catch (err) {
+            console.error("Error upserting payroll:", err);
+            throw err;
+        }
+    };
+
+    const addExpense = async (expense: any) => {
+        try {
+            const { error } = await supabase.from('expenses').insert([expense]);
+            if (error) throw error;
+            await refreshExpenses();
+        } catch (err) {
+            console.error("Error adding expense:", err);
+            throw err;
         }
     };
 
@@ -225,10 +368,12 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
         <SystemContext.Provider value={{
             user, loadingAuth, login, logout, signUp,
             inventory, loadingInventory, refreshInventory,
-            employees, setEmployees,
-            payroll, setPayroll,
+            employees, loadingEmployees, refreshEmployees,
+            payroll, loadingPayroll, refreshPayroll,
+            expenses, loadingExpenses, refreshExpenses,
+            sales, loadingSales, refreshSales,
             alerts, setAlerts,
-            processSale
+            processSale, upsertEmployee, upsertPayroll, addExpense
         }}>
             {children}
         </SystemContext.Provider>
