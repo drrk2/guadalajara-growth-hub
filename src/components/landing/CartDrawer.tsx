@@ -49,16 +49,18 @@ export function CartDrawer() {
   const { items, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
   const { user } = useSystem();
   const { toast } = useToast();
-  const [open, setOpen]                 = useState(false);
-  const [step, setStep]                 = useState<Step>("cart");
-  const [submitting, setSubmitting]     = useState(false);
-  const [deliveryType, setDeliveryType] = useState<DeliveryType>("delivery");
+  const [open, setOpen]                         = useState(false);
+  const [step, setStep]                         = useState<Step>("cart");
+  const [submitting, setSubmitting]             = useState(false);
+  const [deliveryType, setDeliveryType]         = useState<DeliveryType>("delivery");
+  const [pendingWhatsAppUrl, setPendingWhatsAppUrl] = useState<string | null>(null);
 
   const handleOpenChange = (val: boolean) => {
     setOpen(val);
     if (!val) {
       setStep("cart");
       setDeliveryType("delivery");
+      setPendingWhatsAppUrl(null);
     }
   };
 
@@ -183,14 +185,26 @@ export function CartDrawer() {
     // ── success path ──────────────────────────────────────────────────────────
     const waText  = buildMessage(name, phone, company, deliveryType, dCity, dZip, dAddress, dNotes);
     const encoded = encodeURIComponent(waText);
-    window.open(
-      `https://wa.me/${phoneForWa(tenant.whatsapp)}?text=${encoded}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    toast({ title: "¡Cotización enviada!", description: "Registrada en el sistema. Abriendo WhatsApp." });
+    const waUrl   = `https://wa.me/${phoneForWa(tenant.whatsapp)}?text=${encoded}`;
+
     clearCart();
-    handleOpenChange(false);
+
+    // Mobile browsers block window.open after async work — detect by touch support.
+    // On desktop, try the popup; if the browser blocked it, fall through to the same
+    // visible-button fallback used on mobile.
+    const isMobile = navigator.maxTouchPoints > 0;
+    if (!isMobile) {
+      const opened = window.open(waUrl, "_blank", "noopener,noreferrer");
+      if (opened) {
+        toast({ title: "¡Cotización registrada!", description: "WhatsApp abierto en nueva pestaña." });
+        handleOpenChange(false);
+        return;
+      }
+    }
+
+    // Popup blocked or mobile: keep drawer open and show a tappable link.
+    setPendingWhatsAppUrl(waUrl);
+    toast({ title: "¡Cotización registrada!", description: "Abre WhatsApp para enviarla." });
   };
 
   // ── JSX ───────────────────────────────────────────────────────────────────
@@ -471,23 +485,43 @@ export function CartDrawer() {
 
             {/* Pinned footer — always visible above the keyboard */}
             <div className="shrink-0 p-6 border-t border-white/10 bg-black/50 backdrop-blur-md">
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold rounded-none skew-x-[-12deg] transition-all group overflow-hidden relative disabled:opacity-50"
-              >
-                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-[45deg]" />
-                <span className="skew-x-[12deg] flex items-center justify-center gap-2">
-                  {submitting ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</>
-                  ) : (
-                    <>ENVIAR POR WHATSAPP <Send className="h-4 w-4" /></>
-                  )}
-                </span>
-              </Button>
-              <p className="text-[10px] text-center text-white/40 mt-4 uppercase tracking-widest">
-                Abriremos WhatsApp con tu cotización lista.
-              </p>
+              {pendingWhatsAppUrl ? (
+                <>
+                  <a
+                    href={pendingWhatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full h-14 items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-none skew-x-[-12deg] transition-colors"
+                  >
+                    <span className="skew-x-[12deg] flex items-center gap-2 uppercase tracking-widest text-sm">
+                      <Send className="h-4 w-4" /> Abrir WhatsApp
+                    </span>
+                  </a>
+                  <p className="text-[10px] text-center text-white/40 mt-4 uppercase tracking-widest">
+                    Cotización registrada. Toca para enviarla por WhatsApp.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold rounded-none skew-x-[-12deg] transition-all group overflow-hidden relative disabled:opacity-50"
+                  >
+                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-[45deg]" />
+                    <span className="skew-x-[12deg] flex items-center justify-center gap-2">
+                      {submitting ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</>
+                      ) : (
+                        <>ENVIAR POR WHATSAPP <Send className="h-4 w-4" /></>
+                      )}
+                    </span>
+                  </Button>
+                  <p className="text-[10px] text-center text-white/40 mt-4 uppercase tracking-widest">
+                    Abriremos WhatsApp con tu cotización lista.
+                  </p>
+                </>
+              )}
             </div>
           </form>
         )}

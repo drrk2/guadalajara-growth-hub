@@ -6,7 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 import {
   LogOut, ShoppingCart, MessageCircle, ChevronDown, ChevronRight,
-  RefreshCw, FileText, Package,
+  RefreshCw, FileText, Package, EyeOff,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,8 +40,11 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  nueva: "Nueva", contactada: "Contactada", enviada: "Enviada",
-  ganada: "Venta cerrada", perdida: "Cancelada",
+  nueva:      "Solicitud recibida",
+  contactada: "En revisión",
+  enviada:    "Propuesta enviada",
+  ganada:     "Pedido confirmado",
+  perdida:    "Cancelado",
 };
 
 const fmt = (n: number) =>
@@ -68,6 +71,8 @@ export default function CuentaPage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState<string | null>(null);
   const [expanded, setExpanded]     = useState<string | null>(null);
+  const [hiddenIds, setHiddenIds]   = useState<Set<string>>(new Set());
+  const [hidingId, setHidingId]     = useState<string | null>(null);
 
   const loadQuotes = useCallback(async () => {
     if (!user) return;
@@ -90,7 +95,32 @@ export default function CuentaPage() {
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { loadQuotes(); }, [loadQuotes]);
+  const loadHiddenIds = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("client_hidden_quotes")
+      .select("quote_id") as any;
+    if (data) setHiddenIds(new Set((data as { quote_id: string }[]).map(r => r.quote_id)));
+  }, [user]);
+
+  const hideQuote = async (quoteId: string) => {
+    if (!user) return;
+    setHidingId(quoteId);
+    const { error: err } = await supabase.from("client_hidden_quotes").insert({
+      user_id:  user.id,
+      quote_id: quoteId,
+    });
+    if (!err) {
+      setHiddenIds(prev => new Set([...prev, quoteId]));
+      setExpanded(null);
+    }
+    setHidingId(null);
+  };
+
+  useEffect(() => {
+    loadQuotes();
+    loadHiddenIds();
+  }, [loadQuotes, loadHiddenIds]);
 
   const handleLogout = async () => {
     await logout();
@@ -227,7 +257,7 @@ export default function CuentaPage() {
           )}
 
           {/* Quote list */}
-          {!loading && !error && quotes.map(q => (
+          {!loading && !error && quotes.filter(q => !hiddenIds.has(q.id)).map(q => (
             <div
               key={q.id}
               className="border border-white/5 rounded bg-white/[0.02] overflow-hidden"
@@ -279,11 +309,29 @@ export default function CuentaPage() {
 
                   {/* Status note */}
                   <div className={`text-xs px-3 py-2 rounded ${STATUS_STYLE[q.status] ?? "text-white/40"}`}>
-                    {q.status === "nueva" && "Tu cotización fue recibida. Un asesor te contactará pronto."}
+                    {q.status === "nueva"      && "Tu solicitud fue recibida. Un asesor te contactará pronto."}
                     {q.status === "contactada" && "Ya nos comunicamos contigo. Estamos preparando tu propuesta."}
-                    {q.status === "enviada" && "La propuesta formal fue enviada. Revisa tu WhatsApp o correo."}
-                    {q.status === "ganada" && "¡Venta confirmada! Gracias por tu compra en EISEN Industrial."}
-                    {q.status === "perdida" && "Esta cotización fue cancelada."}
+                    {q.status === "enviada"    && "La propuesta formal fue enviada. Revisa tu WhatsApp o correo."}
+                    {q.status === "ganada"     && "¡Pedido confirmado! Gracias por tu compra en EISEN Industrial."}
+                    {q.status === "perdida"    && "Esta cotización fue cancelada."}
+                  </div>
+
+                  {/* Hide action */}
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={hidingId === q.id}
+                      onClick={() => hideQuote(q.id)}
+                      className="gap-1.5 text-white/20 hover:text-white/50 text-xs"
+                    >
+                      {hidingId === q.id ? (
+                        <RefreshCw className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <EyeOff className="h-3 w-3" />
+                      )}
+                      Ocultar de mi vista
+                    </Button>
                   </div>
                 </div>
               )}

@@ -67,11 +67,11 @@ interface Kpis {
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS: Record<QuoteStatus, { label: string; cls: string }> = {
-  nueva:      { label: "Nueva",      cls: "bg-blue-500/10 text-blue-400 border border-blue-500/20" },
-  contactada: { label: "Contactada", cls: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" },
-  enviada:    { label: "Enviada",    cls: "bg-purple-500/10 text-purple-400 border border-purple-500/20" },
-  ganada:     { label: "Ganada",     cls: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" },
-  perdida:    { label: "Perdida",    cls: "bg-red-500/10 text-red-400 border border-red-500/20" },
+  nueva:      { label: "Nueva",            cls: "bg-blue-500/10 text-blue-400 border border-blue-500/20" },
+  contactada: { label: "Contactada",       cls: "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" },
+  enviada:    { label: "Prop. enviada",    cls: "bg-purple-500/10 text-purple-400 border border-purple-500/20" },
+  ganada:     { label: "Venta cerrada",    cls: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" },
+  perdida:    { label: "Perdida",          cls: "bg-red-500/10 text-red-400 border border-red-500/20" },
 };
 
 const STATUS_ORDER: QuoteStatus[] = ["nueva", "contactada", "enviada", "ganada", "perdida"];
@@ -273,6 +273,19 @@ const CotizacionesPage = () => {
         const { error } = await supabase.rpc("close_quote_as_sale", { p_quote_id: quoteId });
         if (error) throw error;
         toast({ title: "Venta cerrada", description: "Stock descontado del inventario." });
+
+        // Notificación al cliente — no bloquea ni rompe el cambio de estatus
+        supabase.functions
+          .invoke("send-customer-notification", { body: { quote_id: quoteId } })
+          .then(({ data }) => {
+            const s = (data as { status?: string } | null)?.status;
+            if (s === "sent") {
+              toast({ title: "Notificación enviada", description: "El cliente fue notificado por WhatsApp." });
+            } else if (s === "skipped") {
+              toast({ description: "WhatsApp no configurado — notificación registrada como pendiente." });
+            }
+          })
+          .catch(() => { /* non-fatal */ });
       } else {
         const { error } = await supabase.rpc("cancel_quote_sale", { p_quote_id: quoteId, p_restore_stock: true });
         if (error) throw error;
