@@ -11,6 +11,8 @@ export interface User {
 
 interface AuthResponse {
     error: Error | null;
+    needsEmailConfirmation?: boolean;
+    sessionCreated?: boolean;
 }
 
 interface SystemContextType {
@@ -185,14 +187,21 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
             // Profile is created automatically by the handle_new_user DB trigger.
             // full_name is passed via user_metadata only for the trigger to read it;
             // it is NOT used for authorization decisions (role comes from DB, not metadata).
-            const { error }: any = await withTimeout(Promise.resolve(supabase.auth.signUp({
+            const { data, error }: any = await withTimeout(Promise.resolve(supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: { full_name: name }
                 }
             })));
-            return { error: error || null };
+            if (error) return { error };
+            // data.user exists but data.session is null → Supabase sent a confirmation email.
+            // data.session exists → email confirmation is disabled; user is immediately active.
+            return {
+                error: null,
+                needsEmailConfirmation: !!data?.user && !data?.session,
+                sessionCreated: !!data?.session,
+            };
         } catch (err: any) {
             console.error("SignUp error:", err);
             return { error: err };

@@ -23,54 +23,76 @@ const Login = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    let error;
+
     if (isLogin) {
+      // ── Login ────────────────────────────────────────────────────────────
       const result = await login(email, password);
-      error = result.error;
-    } else {
-      const result = await signUp(email, password, name);
-      error = result.error;
-    }
-    
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-       toast({
-        variant: "destructive",
-        title: isLogin ? "Error de Autenticación" : "Error de Registro",
-        description: error.message || "Usuario o contraseña inválidos.",
-      });
-      return;
-    }
-
-    toast({
-      title: isLogin ? `Acceso Autorizado` : `Cuenta Creada`,
-      description: isLogin ? `Autenticación exitosa. Cargando entorno de trabajo...` : `Tu cuenta cliente ha sido creada correctamente.`,
-    });
-
-    if (!isLogin) {
-      // Registro nuevo → siempre cliente
-      navigate("/cuenta");
-      return;
-    }
-
-    // Login: detectar rol para redirigir correctamente
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-        navigate(profile?.role === "admin" ? "/dashboard" : "/cuenta");
+      if (result.error) {
+        const msg = result.error.message ?? "";
+        const isUnconfirmed = msg.toLowerCase().includes("email not confirmed");
+        toast({
+          variant: "destructive",
+          title: "Error de Autenticación",
+          description: isUnconfirmed
+            ? "Tu correo aún no está confirmado. Revisa tu bandeja de entrada o spam."
+            : msg || "Usuario o contraseña inválidos.",
+        });
         return;
       }
-    } catch {
-      // Si falla la lectura del perfil, aterrizamos en /cuenta (seguro)
+
+      toast({
+        title: "Acceso Autorizado",
+        description: "Autenticación exitosa. Cargando entorno de trabajo...",
+      });
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+          navigate(profile?.role === "admin" ? "/dashboard" : "/cuenta");
+          return;
+        }
+      } catch {
+        // Si falla la lectura del perfil, aterrizamos en /cuenta (seguro)
+      }
+      navigate("/cuenta");
+
+    } else {
+      // ── Signup ───────────────────────────────────────────────────────────
+      const result = await signUp(email, password, name);
+      setLoading(false);
+
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: "Error de Registro",
+          description: result.error.message || "No se pudo crear la cuenta.",
+        });
+        return;
+      }
+
+      if (result.needsEmailConfirmation) {
+        toast({
+          title: "Cuenta creada",
+          description: "Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.",
+        });
+        setIsLogin(true); // vuelve al formulario de login
+        return;
+      }
+
+      // Email confirmation disabled → sesión activa de inmediato
+      toast({
+        title: "Cuenta Creada",
+        description: "Tu cuenta cliente ha sido creada correctamente.",
+      });
+      navigate("/cuenta");
     }
-    navigate("/cuenta");
   };
 
   return (
