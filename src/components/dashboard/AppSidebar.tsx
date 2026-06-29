@@ -1,11 +1,10 @@
 import React from "react";
 import {
-  LayoutDashboard, DollarSign, Users, Package, Bell, BarChart, LogOut, FileText, ShoppingCart, User, Zap
+  LayoutDashboard, DollarSign, Users, Package, Bell, BarChart, LogOut, ClipboardList, ShoppingCart, User, Contact
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { tenant } from "@/data/mock-data";
-import { alerts } from "@/data/mock-data";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -14,25 +13,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { useSystem } from "@/context/SystemContext";
+import { useAlertsContext } from "@/context/AlertsContext";
 
 const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Ventas / POS", url: "/dashboard/pos", icon: ShoppingCart },
-  { title: "CRM / Clientes", url: "/dashboard/crm", icon: User, protected: true },
-  { title: "Gastos", url: "/dashboard/gastos", icon: DollarSign, protected: true },
-  { title: "Nóminas", url: "/dashboard/nominas", icon: Users, protected: true },
-  { title: "Inventario", url: "/dashboard/inventario", icon: Package },
-  { title: "Alertas", url: "/dashboard/alertas", icon: Bell },
-  { title: "Analítica", url: "/dashboard/analitica", icon: BarChart, protected: true },
+  { title: "Dashboard",      url: "/dashboard",              icon: LayoutDashboard },
+  { title: "Cotizaciones",   url: "/dashboard/cotizaciones", icon: ClipboardList,  protected: true },
+  { title: "Clientes",       url: "/dashboard/clientes",     icon: Contact,        protected: true },
+  { title: "Ventas / POS",   url: "/dashboard/pos",          icon: ShoppingCart,   protected: true },
+  { title: "Inventario",     url: "/dashboard/inventario",   icon: Package,        protected: true },
+  { title: "Equipo",          url: "/dashboard/crm",          icon: User,           protected: true },
+  { title: "Gastos",         url: "/dashboard/gastos",       icon: DollarSign,     protected: true },
+  { title: "Alertas",        url: "/dashboard/alertas",      icon: Bell,           protected: true },
+  { title: "Analítica",      url: "/dashboard/analitica",    icon: BarChart,       protected: true },
 ];
 
 export function AppSidebar() {
-  const { user, logout } = useSystem();
-  const { state } = useSidebar();
+  const { user, logout }         = useSystem();
+  const { count: unreadAlerts }  = useAlertsContext();
+  const { state }                = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
-  const navigate = useNavigate();
-  const unreadAlerts = alerts.filter(a => !a.read).length;
+  const navigate  = useNavigate();
 
   // Filter items based on user role
   const filteredItems = menuItems.filter(item => {

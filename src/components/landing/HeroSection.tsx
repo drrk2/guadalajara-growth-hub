@@ -39,7 +39,7 @@ export function HeroSection() {
             </h1>
 
             <p className="text-xl md:text-2xl text-white/60 mb-10 max-w-2xl font-light leading-relaxed border-l-2 border-primary/50 pl-6">
-              Distribuidora <span className="text-white font-bold tracking-wider">EISEN</span>. Expertos en refacciones de alta precisión y soluciones electromecánicas para la industria de Jalisco.
+              Taller de reparacion de herramientas <span className="text-white font-bold tracking-wider">EISEN</span>. Expertos en refacciones de alta precisión y soluciones electromecánicas para la industria de Mexico.
             </p>
 
             <div className="flex flex-wrap gap-5">

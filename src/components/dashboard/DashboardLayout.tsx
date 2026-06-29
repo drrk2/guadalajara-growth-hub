@@ -1,12 +1,14 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { alerts } from "@/data/mock-data";
+import { AlertsProvider, useAlertsContext } from "@/context/AlertsContext";
 
-export default function DashboardLayout() {
-  const unreadAlerts = alerts.filter(a => !a.read).length;
+// Inner component so it can consume AlertsContext provided by DashboardLayout
+function DashboardInner() {
+  const { count } = useAlertsContext();
+  const navigate  = useNavigate();
 
   return (
     <SidebarProvider>
@@ -19,11 +21,17 @@ export default function DashboardLayout() {
               <span className="text-sm text-muted-foreground font-medium">Panel de Administración</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate("/dashboard/alertas")}
+                title="Ver alertas"
+              >
                 <Bell className="h-4 w-4" />
-                {unreadAlerts > 0 && (
+                {count > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
-                    {unreadAlerts}
+                    {count > 9 ? "9+" : count}
                   </span>
                 )}
               </Button>
@@ -38,5 +46,13 @@ export default function DashboardLayout() {
         </div>
       </div>
     </SidebarProvider>
+  );
+}
+
+export default function DashboardLayout() {
+  return (
+    <AlertsProvider>
+      <DashboardInner />
+    </AlertsProvider>
   );
 }

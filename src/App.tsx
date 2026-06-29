@@ -17,6 +17,8 @@ import AlertasPage from "./pages/dashboard/AlertasPage";
 import AnaliticaPage from "./pages/dashboard/AnaliticaPage";
 import CRMPage from "./pages/dashboard/CRMPage";
 import POSPage from "./pages/dashboard/POSPage";
+import CotizacionesPage from "./pages/dashboard/CotizacionesPage";
+import ClientesPage from "./pages/dashboard/ClientesPage";
 import ChatWidget from "./components/ChatWidget";
 import { SystemProvider, useSystem } from "./context/SystemContext";
 import { CartProvider } from "./context/CartContext";
@@ -75,11 +77,13 @@ const App = () => (
                 <Route index element={<DashboardHome />} />
                 <Route path="gastos" element={<RequireAuth allowedRoles={["admin"]}><GastosPage /></RequireAuth>} />
                 <Route path="nominas" element={<RequireAuth allowedRoles={["admin"]}><NominasPage /></RequireAuth>} />
-                <Route path="inventario" element={<InventarioPage />} />
-                <Route path="alertas" element={<AlertasPage />} />
+                <Route path="inventario" element={<RequireAuth allowedRoles={["admin"]}><InventarioPage /></RequireAuth>} />
+                <Route path="alertas" element={<RequireAuth allowedRoles={["admin"]}><AlertasPage /></RequireAuth>} />
                 <Route path="analitica" element={<RequireAuth allowedRoles={["admin"]}><AnaliticaPage /></RequireAuth>} />
                 <Route path="crm" element={<RequireAuth allowedRoles={["admin"]}><CRMPage /></RequireAuth>} />
-                <Route path="pos" element={<POSPage />} />
+                <Route path="pos" element={<RequireAuth allowedRoles={["admin"]}><POSPage /></RequireAuth>} />
+                <Route path="cotizaciones" element={<RequireAuth allowedRoles={["admin"]}><CotizacionesPage /></RequireAuth>} />
+                <Route path="clientes" element={<RequireAuth allowedRoles={["admin"]}><ClientesPage /></RequireAuth>} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

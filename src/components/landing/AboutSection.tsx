@@ -20,7 +20,7 @@ export function AboutSection() {
               Liderazgo Industrial
             </div>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-8 tracking-tight">
-              Más que un proveedor, somos su <span className="text-primary italic">aliado técnico</span>
+            Somos su <span className="text-primary italic">aliado técnico</span>
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-10">
               Con más de 15 años de experiencia, <strong className="text-foreground">{tenant.name}</strong> se ha consolidado como el referente en soluciones electromecánicas en Jalisco. Nuestra misión es simple: eliminar el tiempo de inactividad de su planta mediante piezas de alta precisión y un servicio técnico impecable.
@@ -30,7 +30,7 @@ export function AboutSection() {
               {[
                 { icon: ShieldCheck, title: "Calidad Certificada", desc: "Componentes originales y procesos bajo norma." },
                 { icon: Clock, title: "Respuesta Inmediata", desc: "Entregas en menos de 24 horas en GDL." },
-                { icon: Wrench, title: "Ingeniería de Campo", desc: "Asesoría especializada in-situ para su maquinaria." },
+                { icon: Wrench, title: "Ingeniería de Campo", desc: "Asesoría especializada para su maquinaria." },
               ].map((item, i) => (
                 <div key={i} className="flex gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                   <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">

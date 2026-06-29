@@ -27,7 +27,7 @@ const NominasPage = () => {
         const promises = pending.map(p => upsertPayroll({
             ...p,
             status: "paid",
-            paidDate: new Date().toISOString().split('T')[0]
+            paid_date: new Date().toISOString().split('T')[0]
         }));
         await Promise.all(promises);
         toast({ title: "Nóminas masivas", description: "Todos los pendientes del periodo actual han sido pagados." });
@@ -37,23 +37,22 @@ const NominasPage = () => {
   };
 
   const toggleStatus = async (employeeId: string) => {
-    const existingRef = payroll.find(p => p.employeeId === employeeId && p.period === currentPeriod);
-    
-    // If no payroll entry exists for this period, we should probably create one
+    const existingRef = payroll.find(p => p.employee_id === employeeId && p.period === currentPeriod);
+
     const p = existingRef || {
-        employeeId,
+        employee_id: employeeId,
         period: currentPeriod,
         status: "pending",
         amount: employees.find(e => e.id === employeeId)?.salary || 0
     };
 
     const isPaid = p.status === "paid";
-    
+
     try {
         await upsertPayroll({
             ...p,
             status: isPaid ? "pending" : "paid",
-            paidDate: isPaid ? null : new Date().toISOString().split('T')[0]
+            paid_date: isPaid ? null : new Date().toISOString().split('T')[0]
         });
         
         toast({
@@ -131,14 +130,14 @@ const NominasPage = () => {
             </TableHeader>
             <TableBody>
               {activeEmployees.map((emp) => {
-                const payrollEntry = periodPayroll.find(p => p.employeeId === emp.id);
+                const payrollEntry = periodPayroll.find(p => p.employee_id === emp.id);
                 const isPaid = payrollEntry?.status === "paid";
                 return (
                   <TableRow key={emp.id} className="hover:bg-muted/20 transition-colors">
                     <TableCell className="font-medium">
                       <div>
                         {emp.name}
-                        <p className="text-[10px] text-muted-foreground font-normal">Ingreso: {emp.startDate}</p>
+                        <p className="text-[10px] text-muted-foreground font-normal">Ingreso: {emp.start_date || 'N/A'}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{emp.position}</TableCell>

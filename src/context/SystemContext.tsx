@@ -1,16 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
-import {
-    products as initialProducts,
-    employees as initialEmployees,
-    alerts as initialAlerts,
-    payroll as initialPayroll
-} from "@/data/mock-data";
+import { alerts as initialAlerts } from "@/data/mock-data";
 
 export interface User {
     id: string;
     email: string;
-    role: "admin" | "employee" | "client";
+    role: "admin" | "client";
     name?: string;
 }
 
@@ -98,37 +93,18 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
 
         const init = async () => {
             await getSession();
+            // Inventory is public data; admin data loads after auth in fetchProfile
             await refreshInventory();
-            await refreshEmployees();
-            await refreshPayroll();
-            await refreshExpenses();
-            await refreshSales();
         };
 
         init();
 
-        // Real-time subscriptions
+        // Public realtime: inventory only (products are public catalog data)
         const inventoryChannel = supabase.channel('inventory-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => refreshInventory())
             .subscribe();
 
-        const employeeChannel = supabase.channel('employee-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => refreshEmployees())
-            .subscribe();
-
-        const payrollChannel = supabase.channel('payroll-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'payroll' }, () => refreshPayroll())
-            .subscribe();
-
-        const expensesChannel = supabase.channel('expenses-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => refreshExpenses())
-            .subscribe();
-
-        const salesChannel = supabase.channel('sales-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, () => refreshSales())
-            .subscribe();
-
-        // Listen for auth changes
+        // Auth state listener
         const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session) {
                 await fetchProfile(session.user.id, session.user.email!);
@@ -141,10 +117,6 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             authSub.unsubscribe();
             supabase.removeChannel(inventoryChannel);
-            supabase.removeChannel(employeeChannel);
-            supabase.removeChannel(payrollChannel);
-            supabase.removeChannel(expensesChannel);
-            supabase.removeChannel(salesChannel);
         };
     }, []);
 
@@ -164,14 +136,23 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
                console.error("Error fetching profile:", error);
             }
 
-            // Defaults to 'client' if profile doesn't exist yet
+            const role: "admin" | "client" = data?.role === "admin" ? "admin" : "client";
             setUser({
                 id: userId,
                 email: email,
-                role: data?.role || "client",
+                role,
                 name: data?.full_name
             });
-            console.log(`[AUTH DIAGNOSTIC] Perfil cargado. Rol asignado: ${data?.role || "client"}`);
+
+            // Load admin-only data after authentication
+            if (role === "admin") {
+                await Promise.all([
+                    refreshEmployees(),
+                    refreshPayroll(),
+                    refreshExpenses(),
+                    refreshSales(),
+                ]);
+            }
         } catch (err) {
             console.error("Profile fetch error:", err);
         } finally {
@@ -189,9 +170,7 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (data?.user) {
-                // Wait for the profile to be fetched before finishing the login process
                 await fetchProfile(data.user.id, data.user.email!);
-                console.log(`[AUTH DIAGNOSTIC] Login exitoso. Usuario: ${data.user.email}`);
             }
 
             return { error: null };
@@ -203,24 +182,19 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
 
     const signUp = async (email: string, password: string, name: string): Promise<AuthResponse> => {
         try {
-            const { data, error }: any = await withTimeout(Promise.resolve(supabase.auth.signUp({ 
-                email, 
+            // Profile is created automatically by the handle_new_user DB trigger.
+            // full_name is passed via user_metadata only for the trigger to read it;
+            // it is NOT used for authorization decisions (role comes from DB, not metadata).
+            const { error }: any = await withTimeout(Promise.resolve(supabase.auth.signUp({
+                email,
                 password,
                 options: {
-                    data: { full_name: name, role: 'client' }
+                    data: { full_name: name }
                 }
             })));
-
-            // If successful, create profile entry
-            if (!error && data?.user) {
-                await withTimeout(Promise.resolve(supabase.from('profiles').insert([
-                    { id: data.user.id, full_name: name, role: 'client' }
-                ])));
-            }
-            
             return { error: error || null };
         } catch (err: any) {
-            console.error("SignUp Timeout/Network Error:", err);
+            console.error("SignUp error:", err);
             return { error: err };
         }
     };
@@ -308,8 +282,8 @@ export const SystemProvider = ({ children }: { children: ReactNode }) => {
             const { data: sale, error: saleError } = await supabase.from('sales').insert([{
                 total_amount: totalAmount,
                 items: JSON.stringify(cart),
-                customer_id: user?.id,
-                status: 'completed'
+                status: 'completed',
+                created_by: user?.id ?? null,
             }]).select().single();
 
             if (saleError) throw saleError;
