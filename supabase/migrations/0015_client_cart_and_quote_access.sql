@@ -10,6 +10,8 @@
 create table if not exists public.client_carts (
   user_id    uuid        primary key references auth.users(id) on delete cascade,
   items      jsonb       not null default '[]'::jsonb,
+
+  
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
