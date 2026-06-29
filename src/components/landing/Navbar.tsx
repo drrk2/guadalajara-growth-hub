@@ -5,10 +5,15 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CartDrawer } from "./CartDrawer";
+import { useSystem } from "@/context/SystemContext";
 
 export function Navbar() {
   const navigate = useNavigate();
+  const { user }  = useSystem();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const authTarget  = user ? (user.role === "admin" ? "/dashboard" : "/cuenta") : "/login";
+  const authLabel   = user ? (user.role === "admin" ? "DASHBOARD" : "MI CUENTA") : "ACCEDER";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
@@ -49,12 +54,12 @@ export function Navbar() {
           
           <div className="flex items-center gap-4 border-l border-white/10 pl-6">
             <CartDrawer />
-            <Button 
-              onClick={() => navigate("/login")} 
+            <Button
+              onClick={() => navigate(authTarget)}
               size="sm"
               className="bg-white text-black hover:bg-primary hover:text-white px-6 font-bold rounded-none skew-x-[-12deg] transition-all"
             >
-              <span className="skew-x-[12deg]">ACCEDER</span>
+              <span className="skew-x-[12deg]">{authLabel}</span>
             </Button>
           </div>
         </div>
@@ -85,11 +90,11 @@ export function Navbar() {
               {label}
             </a>
           ))}
-          <Button 
-            onClick={() => { setMobileOpen(false); navigate("/login"); }} 
+          <Button
+            onClick={() => { setMobileOpen(false); navigate(authTarget); }}
             className="w-full bg-primary hover:bg-primary/80 text-white py-6 text-lg font-bold"
           >
-            ACCEDER AL SISTEMA
+            {authLabel}
           </Button>
         </div>
       </motion.div>

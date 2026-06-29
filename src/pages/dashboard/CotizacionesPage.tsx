@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
   RefreshCw, MessageSquare, FileText, ChevronRight,
-  Package, AlertCircle, XCircle, Trash2, Loader2,
+  Package, AlertCircle, XCircle, Trash2, Loader2, TrendingUp,
 } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -115,6 +115,9 @@ const CotizacionesPage = () => {
   const [updatingId, setUpdatingId]     = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Quote | null>(null);
   const [deleting, setDeleting]         = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    quoteId: string; newStatus: QuoteStatus; customerName: string;
+  } | null>(null);
 
   // ── KPI fetch (global — not affected by page/filter) ──────────────────────
 
@@ -228,6 +231,15 @@ const CotizacionesPage = () => {
 
   // ── Status update ──────────────────────────────────────────────────────────
 
+  // Interceptor: ganada y perdida requieren confirmación y usan RPCs.
+  const requestStatusChange = (quoteId: string, newStatus: QuoteStatus, customerName: string) => {
+    if (newStatus === "ganada" || newStatus === "perdida") {
+      setPendingStatusChange({ quoteId, newStatus, customerName });
+    } else {
+      handleStatusChange(quoteId, newStatus);
+    }
+  };
+
   const handleStatusChange = async (quoteId: string, newStatus: QuoteStatus) => {
     setUpdatingId(quoteId);
     try {
@@ -245,6 +257,34 @@ const CotizacionesPage = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error desconocido";
       toast({ variant: "destructive", title: "Error al actualizar", description: msg });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Ejecuta el cambio de estatus confirmado (ganada/perdida via RPC).
+  const executeStatusChange = async () => {
+    if (!pendingStatusChange) return;
+    const { quoteId, newStatus } = pendingStatusChange;
+    setPendingStatusChange(null);
+    setUpdatingId(quoteId);
+    try {
+      if (newStatus === "ganada") {
+        const { error } = await supabase.rpc("close_quote_as_sale", { p_quote_id: quoteId });
+        if (error) throw error;
+        toast({ title: "Venta cerrada", description: "Stock descontado del inventario." });
+      } else {
+        const { error } = await supabase.rpc("cancel_quote_sale", { p_quote_id: quoteId, p_restore_stock: true });
+        if (error) throw error;
+        toast({ title: "Cotización cancelada", description: "Stock restaurado si había venta." });
+      }
+      const patch = (q: Quote) => q.id === quoteId ? { ...q, status: newStatus } : q;
+      setQuotes(prev => prev.map(patch));
+      setDetail(prev => prev ? patch(prev) : prev);
+      fetchKpis();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      toast({ variant: "destructive", title: "Error al procesar", description: msg });
     } finally {
       setUpdatingId(null);
     }
@@ -476,7 +516,7 @@ const CotizacionesPage = () => {
                         <TableCell>
                           <Select
                             value={q.status}
-                            onValueChange={val => handleStatusChange(q.id, val as QuoteStatus)}
+                            onValueChange={val => requestStatusChange(q.id, val as QuoteStatus, q.customers.name)}
                             disabled={isUpdating}
                           >
                             <SelectTrigger
@@ -532,7 +572,7 @@ const CotizacionesPage = () => {
                                 size="icon"
                                 className="h-8 w-8 hover:text-orange-400"
                                 title="Cancelar cotización"
-                                onClick={() => handleStatusChange(q.id, "perdida")}
+                                onClick={() => requestStatusChange(q.id, "perdida", q.customers.name)}
                                 disabled={isUpdating}
                               >
                                 <XCircle className="h-4 w-4" />
@@ -723,7 +763,7 @@ const CotizacionesPage = () => {
               <div className="flex gap-3 pt-1">
                 <Select
                   value={detail.status}
-                  onValueChange={val => handleStatusChange(detail.id, val as QuoteStatus)}
+                  onValueChange={val => requestStatusChange(detail.id, val as QuoteStatus, detail.customers.name)}
                   disabled={updatingId === detail.id}
                 >
                   <SelectTrigger className="flex-1 h-10 text-xs font-bold uppercase tracking-widest">
@@ -749,17 +789,28 @@ const CotizacionesPage = () => {
                 </Button>
               </div>
 
-              {/* Actions row 2: cancel + delete */}
-              <div className="flex gap-2">
+              {/* Actions row 2: cerrar venta + cancelar + eliminar */}
+              <div className="flex flex-wrap gap-2">
+                {detail.status !== "ganada" && detail.status !== "perdida" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 flex-1 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 font-bold"
+                    onClick={() => requestStatusChange(detail.id, "ganada", detail.customers.name)}
+                    disabled={updatingId === detail.id}
+                  >
+                    <TrendingUp className="h-4 w-4" /> Cerrar venta
+                  </Button>
+                )}
                 {detail.status !== "perdida" && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="gap-1.5 flex-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10 font-bold"
-                    onClick={() => handleStatusChange(detail.id, "perdida")}
+                    onClick={() => requestStatusChange(detail.id, "perdida", detail.customers.name)}
                     disabled={updatingId === detail.id}
                   >
-                    <XCircle className="h-4 w-4" /> Cancelar cotización
+                    <XCircle className="h-4 w-4" /> Cancelar / devolver stock
                   </Button>
                 )}
                 <Button
@@ -772,6 +823,58 @@ const CotizacionesPage = () => {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* ── Confirm Action Dialog (ganada / perdida via RPC) ── */}
+      <Dialog
+        open={!!pendingStatusChange}
+        onOpenChange={open => { if (!open) setPendingStatusChange(null); }}
+      >
+        {pendingStatusChange && (
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className={`flex items-center gap-2 ${
+                pendingStatusChange.newStatus === "ganada" ? "text-emerald-400" : "text-orange-400"
+              }`}>
+                {pendingStatusChange.newStatus === "ganada"
+                  ? <><TrendingUp className="h-5 w-5" /> Cerrar venta</>
+                  : <><XCircle className="h-5 w-5" /> Cancelar cotización</>
+                }
+              </DialogTitle>
+              <DialogDescription className="pt-1">
+                {pendingStatusChange.newStatus === "ganada"
+                  ? <>Esto cerrará la venta de <strong>{pendingStatusChange.customerName}</strong>. El stock de cada producto se descontará del inventario.</>
+                  : <>Esto cancelará la cotización de <strong>{pendingStatusChange.customerName}</strong>. Si hay una venta cerrada asociada, el stock se restaurará automáticamente.</>
+                }
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setPendingStatusChange(null)}
+                disabled={!!updatingId}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={executeStatusChange}
+                disabled={!!updatingId}
+                className={`gap-2 ${
+                  pendingStatusChange.newStatus === "ganada"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-orange-600 hover:bg-orange-700 text-white"
+                }`}
+              >
+                {updatingId
+                  ? <><RefreshCw className="h-4 w-4 animate-spin" /> Procesando...</>
+                  : pendingStatusChange.newStatus === "ganada"
+                    ? <><TrendingUp className="h-4 w-4" /> Cerrar venta</>
+                    : <><XCircle className="h-4 w-4" /> Confirmar cancelación</>
+                }
+              </Button>
+            </DialogFooter>
           </DialogContent>
         )}
       </Dialog>

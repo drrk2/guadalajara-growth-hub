@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShoppingCart, X, Plus, Minus, Send, ArrowLeft, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useSystem } from "@/context/SystemContext";
 import { tenant } from "@/data/mock-data";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ const createUuid = (): string => {
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
+  const { user } = useSystem();
   const { toast } = useToast();
   const [open, setOpen]                 = useState(false);
   const [step, setStep]                 = useState<Step>("cart");
@@ -102,14 +104,37 @@ export function CartDrawer() {
     let dbErrorMsg = "";
 
     try {
-      const customerId = createUuid();
-      const quoteId    = createUuid();
+      let customerId: string;
+      const quoteId = createUuid();
 
-      // 1. customer (lead) — UUID generated client-side, no SELECT needed
-      const { error: custErr } = await supabase.from("customers").insert({
-        id: customerId, name, phone, company,
-      });
-      if (custErr) throw custErr;
+      if (user) {
+        // Logged-in: find or create a customer record tied to this account
+        const { data: existing } = await supabase
+          .from("customers")
+          .select("id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          customerId = existing[0].id;
+          // Update with latest contact info
+          await supabase.from("customers").update({ name, phone, company }).eq("id", customerId);
+        } else {
+          customerId = createUuid();
+          const { error: custErr } = await supabase.from("customers").insert({
+            id: customerId, name, phone, company, email: user.email, user_id: user.id,
+          });
+          if (custErr) throw custErr;
+        }
+      } else {
+        // Anonymous: create a new customer every time
+        customerId = createUuid();
+        const { error: custErr } = await supabase.from("customers").insert({
+          id: customerId, name, phone, company,
+        });
+        if (custErr) throw custErr;
+      }
 
       // 2. quote with delivery fields
       const { error: quoteErr } = await supabase.from("quotes").insert({

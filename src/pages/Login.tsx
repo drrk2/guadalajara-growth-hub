@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -47,15 +48,29 @@ const Login = () => {
       title: isLogin ? `Acceso Autorizado` : `Cuenta Creada`,
       description: isLogin ? `Autenticación exitosa. Cargando entorno de trabajo...` : `Tu cuenta cliente ha sido creada correctamente.`,
     });
-    
-    // The SystemContext handles the actual loading state and redirecting logic through RequireAuth,
-    // but we can manually push them to home if they just signed up, or dashboard if they logged in.
-    // The safest is just navigating to / and letting RequireAuth redirect if they are admin.
+
     if (!isLogin) {
-       navigate("/");
-    } else {
-       navigate("/dashboard");
+      // Registro nuevo → siempre cliente
+      navigate("/cuenta");
+      return;
     }
+
+    // Login: detectar rol para redirigir correctamente
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        navigate(profile?.role === "admin" ? "/dashboard" : "/cuenta");
+        return;
+      }
+    } catch {
+      // Si falla la lectura del perfil, aterrizamos en /cuenta (seguro)
+    }
+    navigate("/cuenta");
   };
 
   return (

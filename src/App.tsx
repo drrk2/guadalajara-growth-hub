@@ -19,6 +19,7 @@ import CRMPage from "./pages/dashboard/CRMPage";
 import POSPage from "./pages/dashboard/POSPage";
 import CotizacionesPage from "./pages/dashboard/CotizacionesPage";
 import ClientesPage from "./pages/dashboard/ClientesPage";
+import CuentaPage from "./pages/CuentaPage";
 import ChatWidget from "./components/ChatWidget";
 import { SystemProvider, useSystem } from "./context/SystemContext";
 import { CartProvider } from "./context/CartContext";
@@ -85,6 +86,7 @@ const App = () => (
                 <Route path="cotizaciones" element={<RequireAuth allowedRoles={["admin"]}><CotizacionesPage /></RequireAuth>} />
                 <Route path="clientes" element={<RequireAuth allowedRoles={["admin"]}><ClientesPage /></RequireAuth>} />
               </Route>
+              <Route path="/cuenta" element={<RequireAuth><CuentaPage /></RequireAuth>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
